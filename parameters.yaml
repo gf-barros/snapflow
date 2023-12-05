@@ -1,0 +1,5 @@
+snapshots:
+  file_type_str: 'h5_fenics'
+  folder: 'data'
+  file_name_contains: ['concentration']
+  dataset: null

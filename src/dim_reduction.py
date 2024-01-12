@@ -1,8 +1,16 @@
 import numpy as np
 import torch.nn
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from .utils import map_input_function_pytorch
+import logging
+import h5py
+import os
+
+# Disables log messages when using matplotlib
+logging.getLogger("matplotlib.font_manager").disabled = True
+logging.getLogger("matplotlib.ticker").disabled = True
 
 
 class SVD:
@@ -43,13 +51,13 @@ class SVD:
     def __undo_normalization(self):
         pass
 
-    def diagonalize_s(self):
+    def __diagonalize_s(self):
         """If singular values are in the form of a 1D vector,
         returns a 2D diagonal matrix.
         """
         return np.diag(self.s)
 
-    def vectorize_s(self):
+    def __vectorize_s(self):
         """If singular values are in the form of a 2D diagonal matrix,
         returns a 1D vector.
         """
@@ -83,7 +91,9 @@ class SVD:
             z_projected_matrix = self.data @ (self.data.T @ z_projected_matrix)
         q_values, _ = np.linalg.qr(z_projected_matrix, mode="reduced")
         y_reduced_matrix = q_values.T @ self.data
-        u_vectors_y, self.s, self.vt = np.linalg.svd(y_reduced_matrix, full_matrices=0)
+        u_vectors_y, self.s, self.vt = np.linalg.svd(
+            y_reduced_matrix, full_matrices=False
+        )
         self.u = q_values @ u_vectors_y
         self.__truncate_svd()
         return
@@ -104,6 +114,23 @@ class SVD:
                 self.__svd()
             case "randomized_svd":
                 self.__randomized_svd()
+
+    def plot_singular_values(self):
+        """Plots singular values computed."""
+        plot_data = self.s[:, np.newaxis]
+        plot_data = np.insert(plot_data, 1, range(1, plot_data.shape[0] + 1), axis=1)
+
+        # Plotting scatter plot using matplotlib
+        fig, ax = plt.subplots()
+        ax.scatter(plot_data[:, 1], plot_data[:, 0])
+
+        # Setting x and y axis labels and scales
+        ax.set_xlabel("i")
+        ax.set_ylabel("Singular Values")
+        ax.set_yscale("log")
+
+        # Displaying plot
+        plt.show()
 
 
 class AutoEncoderCreator(torch.nn.Module):
@@ -280,7 +307,7 @@ class AutoEncoder:
         self.data_loader = None
         self.data_loader_training = None
         self.outputs = {}
-        self.data = data
+        self.data = self.auto_encoder.data
         self.ae_params_dict = ae_params_dict
 
     def __load_data(self, key_batch_size, key_num_workers, shuffle_flag):
@@ -382,3 +409,28 @@ class AutoEncoder:
         self.outputs["error_training_np"] = np.array(
             list(map(self.__item_function, self.outputs["error_training"]))
         )
+
+    def plot_quantities_per_epoch(self, quantity):
+        """Plots quantities computed per epoch."""
+        plot_data = np.array(self.outputs[quantity])
+        plot_data = plot_data[:, np.newaxis]
+        plot_data = np.insert(plot_data, 1, range(1, plot_data.shape[0] + 1), axis=1)
+
+        fig, ax = plt.subplots()
+        ax.scatter(plot_data[:, 1], plot_data[:, 0])
+        ax.set_xlabel("epochs")
+        ax.set_ylabel(quantity)
+        ax.set_yscale("log")
+        plt.show()
+
+    def insert_h5_vector(self, vector):
+        """Injects vector on H5 files for post-processing viz."""
+        filename_output = os.path.join(
+            self.ae_params_dict["visualization_folder"],
+            "reconstructed_vector",
+            "concentration_1.h5",
+        )
+        with h5py.File(filename_output, "r+") as h5_file_output:
+            h5_file_output["concentration"]["concentration_0"]["vector"][...] = vector[
+                :, np.newaxis
+            ]

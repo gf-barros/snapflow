@@ -3,3 +3,23 @@ snapshots:
   folder: 'data'
   file_name_contains: ['concentration']
   dataset: null
+svd:
+  trunc_basis: 10
+  svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
+  power_iterations: 1
+  oversampling: 20
+auto_encoder:
+    batch_size: 10
+    num_epochs: 10
+    learning_rate: 1e-4
+    weight_decay: 1e-8
+    loss_function: "smooth_l1_loss"
+    loss_parameters: 
+      beta: 0.2
+    num_workers: 2
+    number_of_hidden_layers: 5
+    hidden_layers_sizes: [50, 25, 12, 6, 3]
+    hidden_layers_activation_function: ["leaky_relu", "leaky_relu", "leaky_relu", "leaky_relu", ""]
+    hidden_layers_activation_function_parameters: [0.2, 0.2, 0.2, 0.2, None]
+    decoder_activation_function: "sigmoid"
+    decoder_activation_function_parameter: None

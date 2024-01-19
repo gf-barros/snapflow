@@ -1,5 +1,5 @@
 import numpy as np
-import torch.nn
+import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -11,6 +11,11 @@ import os
 # Disables log messages when using matplotlib
 logging.getLogger("matplotlib.font_manager").disabled = True
 logging.getLogger("matplotlib.ticker").disabled = True
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
 class SVD:
@@ -44,12 +49,6 @@ class SVD:
         self.vt = None
         self.data = data
         self.svd_params_dict = svd_params_dict
-
-    def __apply_normalization(self):
-        pass
-
-    def __undo_normalization(self):
-        pass
 
     def __diagonalize_s(self):
         """If singular values are in the form of a 1D vector,
@@ -94,6 +93,9 @@ class SVD:
         u_vectors_y, self.s, self.vt = np.linalg.svd(
             y_reduced_matrix, full_matrices=False
         )
+        # print(self.u.shape)
+        print(q_values.shape)
+        print(u_vectors_y.shape)
         self.u = q_values @ u_vectors_y
         self.__truncate_svd()
         return
@@ -159,7 +161,7 @@ class AutoEncoderCreator(torch.nn.Module):
             Neural Network architecture for the decoder.
         """
         super().__init__()
-        self.data = torch.tensor(data, dtype=torch.float32)
+        self.data = torch.tensor(data.T, dtype=torch.float32)
         self.ae_params_dict = ae_params_dict
         self.encoder = None
         self.decoder = None
@@ -306,9 +308,24 @@ class AutoEncoder:
         self.auto_encoder = AutoEncoderCreator(data, ae_params_dict)
         self.data_loader = None
         self.data_loader_training = None
+        self.normalization_technique_class = None
         self.outputs = {}
         self.data = self.auto_encoder.data
         self.ae_params_dict = ae_params_dict
+
+    def __train_test_split(self):
+        pass  # TODO:
+
+    def __log_run(self, log_type="training"):
+        if log_type == "training":
+            logger.info(
+                "-------------------- Starting training for AutoEncoder --------------------"
+            )
+            logger.info(f" # of data: {self.data.shape}")
+            logger.info(
+                f" # of layers: {self.ae_params_dict['number_of_hidden_layers']}"
+            )
+            logger.info(f" Encoder architecture: {self.auto_encoder.encoder}")
 
     def __load_data(self, key_batch_size, key_num_workers, shuffle_flag):
         """Sets up DataLoader
@@ -353,6 +370,7 @@ class AutoEncoder:
 
     def fit(self):
         """Trains AutoEncoder"""
+        self.__log_run("training")
         self.auto_encoder.apply(self.__init_weights)
         self.data_loader = self.__load_data("batch_size", "num_workers", True)
         loss_function = map_input_function_pytorch[
@@ -372,12 +390,11 @@ class AutoEncoder:
 
         for _ in tqdm(range(epochs)):
             losses_batches_per_epoch = []
-            for __, image in enumerate(self.data_loader):
-                image = image.to(torch.float32)
-                reconstructed = self.auto_encoder(image)
-                loss = loss_function(reconstructed, image)
-
+            for entry in self.data_loader:
+                entry = entry.to(torch.float32)
                 optimizer.zero_grad()
+                reconstructed = self.auto_encoder(entry)
+                loss = loss_function(reconstructed, entry)
                 loss.backward()
                 optimizer.step()
 
@@ -386,10 +403,17 @@ class AutoEncoder:
             l_loss = np.array(list(map(self.__item_function, temp_loss_batch)))
             temp_avg_loss_epoch = l_loss.mean()
             self.outputs["avg_loss_by_epoch"].append(temp_avg_loss_epoch)
-            self.outputs["outputs"].append((epochs, image, reconstructed))
+            # self.outputs["outputs"].append((epochs, entry, reconstructed))
 
-    def compute_training_error(self):
-        """???"""
+    def forward(self, vector):
+        """Trains AutoEncoder"""
+        self.__normalize_data()
+        self.__log_run("training")
+        self.auto_encoder.apply(self.__init_weights)
+        self.data_loader = self.__load_data("batch_size", "num_workers", True)
+
+    def encode(self):
+        """After training, encodes data for surrogate modeling"""
         print("\nCalculating training error for each vector")
         self.data_loader_training = self.__load_data(
             "batch_size_training_error", "num_workers_training_errors", False
@@ -422,15 +446,3 @@ class AutoEncoder:
         ax.set_ylabel(quantity)
         ax.set_yscale("log")
         plt.show()
-
-    def insert_h5_vector(self, vector):
-        """Injects vector on H5 files for post-processing viz."""
-        filename_output = os.path.join(
-            self.ae_params_dict["visualization_folder"],
-            "reconstructed_vector",
-            "concentration_1.h5",
-        )
-        with h5py.File(filename_output, "r+") as h5_file_output:
-            h5_file_output["concentration"]["concentration_0"]["vector"][...] = vector[
-                :, np.newaxis
-            ]

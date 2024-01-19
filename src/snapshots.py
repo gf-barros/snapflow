@@ -4,6 +4,7 @@ import h5py
 import logging
 import numpy as np
 from natsort import natsorted
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from tqdm import tqdm
 import os
 
@@ -115,3 +116,30 @@ def snapshots_assembly(snapshots_params):
         data = ingestion_function(*ingestion_parameters)
         snapshots[:, i] = np.squeeze(data)
     return filenames, snapshots
+
+
+def data_normalization(data, params, transpose=False):
+    if transpose:
+        data = data.T
+    if params["normalization"] == "min_max":
+        normalization_technique_class = MinMaxScaler()
+        transformed_data = normalization_technique_class.fit_transform(data)
+    if params["normalization"] == "standard_scaler":
+        normalization_technique_class = StandardScaler()
+        transformed_data = normalization_technique_class.fit_transform(data)
+    if transpose:
+        transformed_data = transformed_data.T
+    return transformed_data, normalization_technique_class
+
+
+def insert_h5_vector(vector, params, vector_dir="reconstructed_vector"):
+    """Injects vector on H5 files for post-processing viz."""
+    filename_output = os.path.join(
+        params["visualization_folder"],
+        vector_dir,
+        "concentration_1.h5",
+    )
+    with h5py.File(filename_output, "r+") as h5_file_output:
+        h5_file_output["concentration"]["concentration_0"]["vector"][...] = vector[
+            :, np.newaxis
+        ]

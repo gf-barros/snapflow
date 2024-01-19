@@ -1,18 +1,19 @@
 snapshots:
-  file_type_str: 'h5_fenics'
+  file_type_str: 'h5_fenics' #h5_libmesh
   folder: 'data/input'
+  visualization_folder: 'data/visualization'
   file_name_contains: ['concentration']
+  normalization: "standard_scaler"
   dataset: null
 svd:
-  visualization_folder: 'data/visualization'
   trunc_basis: 270
+  normalization: "min_max"
   svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1
   oversampling: 20
 auto_encoder:
-  visualization_folder: 'data/visualization'
-  batch_size: 10
-  num_epochs: 20
+  batch_size: 300
+  num_epochs: 10000
   learning_rate: 1e-4
   weight_decay: 1e-8
   loss_function: "smooth_l1_loss"

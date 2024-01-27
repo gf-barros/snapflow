@@ -1,19 +1,32 @@
+experiment_name: "loss_5000"
+random_state: 42
+normalization:
+  snapshots: null
+  svd: "min_max"
+  autoencoder: null
+  surrogate: null
+splitting:
+  strategy: "temporal" #["temporal", "kfold", "train_test", train_val]
+  number_of_folds_or_splits: 2
+  train_size: 0.8
+  validation_size: 300
+  test_size: 0.1
+  gap: 0
 snapshots:
   file_type_str: 'h5_fenics' #h5_libmesh
   folder: 'data/input'
   visualization_folder: 'data/visualization'
   file_name_contains: ['concentration']
-  normalization: "standard_scaler"
   dataset: null
 svd:
-  trunc_basis: 270
+  trunc_basis: 27
   normalization: "min_max"
   svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1
   oversampling: 20
 auto_encoder:
   batch_size: 300
-  num_epochs: 10000
+  num_epochs: 1
   learning_rate: 1e-4
   weight_decay: 1e-8
   loss_function: "smooth_l1_loss"

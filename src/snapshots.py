@@ -96,10 +96,12 @@ def snapshots_assembly(snapshots_params):
         logger.info("FEniCS HDF5 file selected.")
         filenames = []
         for contain_files in snapshots_params["file_name_contains"]:
+            logger.info(f"Searching for files that containg the string '{contain_files}'.")
             for dirpath, _, file_names in os.walk(snapshots_params["folder"]):
                 for f in file_names:
-                    if f.endswith(".h5") and contain_files in f:
+                    if f.endswith(".h5"): # and contain_files in f:
                         filenames.append(os.path.join(dirpath, f))
+        logger.info(f"{len(filenames)} snapshots found.")
         filenames = natsorted(filenames)
         ingestion_function = read_h5_fenics
         ingestion_parameters = [filenames[0]]
@@ -118,13 +120,13 @@ def snapshots_assembly(snapshots_params):
     return filenames, snapshots
 
 
-def data_normalization(data, params, transpose=False):
+def data_normalization(data, params, pipeline_stage, transpose=False):
     if transpose:
         data = data.T
-    if params["normalization"] == "min_max":
+    if params["normalization"][pipeline_stage] == "min_max":
         normalization_technique_class = MinMaxScaler()
         transformed_data = normalization_technique_class.fit_transform(data)
-    if params["normalization"] == "standard_scaler":
+    if params["normalization"][pipeline_stage]  == "standard_scaler":
         normalization_technique_class = StandardScaler()
         transformed_data = normalization_technique_class.fit_transform(data)
     if transpose:

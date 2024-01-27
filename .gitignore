@@ -6,3 +6,4 @@
 *.csv
 .ipynb_checkpoints/
 src/.ipynb_checkpoints
+data/output/*

@@ -1,3 +1,5 @@
 from .snapshots import snapshots_assembly
-from .dim_reduction import SVD, AutoEncoder, AutoEncoderCreator
+from .data_split import DataSplitter
+from .linear_reduction import SVD
+from .nonlinear_reduction import AutoEncoder, AutoEncoderCreator
 from .utils import map_input_function_pytorch

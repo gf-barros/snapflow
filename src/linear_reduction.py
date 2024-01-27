@@ -109,7 +109,7 @@ class SVD:
             case "randomized_svd":
                 self.__randomized_svd()
 
-    def plot_singular_values(self):
+    def plot_singular_values(self, save_only=True):
         """Plots singular values computed."""
         plot_data = self.s[:, np.newaxis]
         plot_data = np.insert(plot_data, 1, range(1, plot_data.shape[0] + 1), axis=1)
@@ -126,6 +126,6 @@ class SVD:
         if hasattr(self, 'output_folder'):
             plt.savefig(self.output_folder / Path("singular_values.png"))
 
-        # Displaying plot
-        plt.show()
+        if not save_only:
+            plt.show()
 

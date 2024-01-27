@@ -40,35 +40,38 @@ class DataSplitter:
             # logger.debug(f"  Train: index={train_index}")
             # logger.debug(f"  Validation:  index={val_index}")
             self.folded_data[i] = {}
-            self.folded_data[i].update({"train": data[train_index]})
-            self.folded_data[i].update({"validation": data[val_index]})
+            self.folded_data[i].update({"train": data[train_index].T})
+            self.folded_data[i].update({"validation": data[val_index].T})
 
         return self.folded_data
 
     def _standard_split(self, data, size_type="validation_size", shuffle=True):
         logger.info("-------------------- Starting standard train/validation strategy --------------------")
         if size_type == "test_size": 
-            indices = np.arange(data.shape[1])
+            #indices = np.arange(data.shape[1])
             (
                 train_data,
                 test_data,
-                indices_train,
-                indices_test,
-            ) = train_test_split(data, indices, test_size=self.splitting_params.get(size_type), shuffle=shuffle, random_state=self.random_state)
+            ) = train_test_split(data, test_size=self.splitting_params.get(size_type), shuffle=shuffle, random_state=self.random_state)
             self.folded_data[0] = {}
-            self.folded_data[0].update({"train": train_data})
-            self.folded_data[0].update({"test": test_data})
+            self.folded_data[0].update({"train": train_data.T})
+            self.folded_data[0].update({"test": test_data.T})
 
         else:
             train_data, val_data= train_test_split(data, test_size=self.splitting_params.get(size_type), shuffle=shuffle, random_state=self.random_state)
             self.folded_data[0] = {}
-            self.folded_data[0].update({"train": train_data})
-            self.folded_data[0].update({"validation": val_data})
+            self.folded_data[0].update({"train": train_data.T})
+            self.folded_data[0].update({"validation": val_data.T})
         return self.folded_data
     
     def preserve_test_data(self, data, shuffle=False):
+        data = data.T
         logger.info("-------------------- Starting standard train/test strategy --------------------")
         folded_data = self._standard_split(data, size_type="test_size", shuffle=shuffle)
+        logger.info(f"Number of folds: {len(folded_data.keys())}")
+        for key in folded_data:
+            for inner_key in folded_data[key]:
+                logger.info(f"Dimensions of fold {key}: {folded_data[key][inner_key].shape}")
         return folded_data
     
     def split_data(self, data):

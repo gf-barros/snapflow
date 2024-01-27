@@ -214,7 +214,7 @@ class AutoEncoder:
             )
             logger.info(f" Encoder architecture: {self.auto_encoder.encoder}")
 
-    def __load_data(self, key_batch_size, key_num_workers, shuffle_flag):
+    def __load_data(self, data, key_batch_size, key_num_workers, shuffle_flag):
         """Sets up DataLoader
 
         Parameters
@@ -232,7 +232,7 @@ class AutoEncoder:
             _description_
         """
         data_loader = DataLoader(
-            dataset=self.data,
+            dataset=data,
             batch_size=self.ae_params_dict[key_batch_size],
             num_workers=self.ae_params_dict[key_num_workers],
             shuffle=shuffle_flag,
@@ -259,7 +259,7 @@ class AutoEncoder:
         """Trains AutoEncoder"""
         self.__log_run("training")
         self.auto_encoder.apply(self.__init_weights)
-        self.data_loader = self.__load_data("batch_size", "num_workers", True)
+        self.data_loader = self.__load_data(self.data, "batch_size", "num_workers", True)
         loss_function = map_input_function_pytorch[
             self.ae_params_dict["loss_function"]
         ](self.ae_params_dict["loss_parameters"]["beta"])
@@ -278,7 +278,7 @@ class AutoEncoder:
         for _ in tqdm(range(epochs)):
             losses_batches_per_epoch = []
             for entry in self.data_loader:
-                entry = entry.to(torch.float32)
+                #entry = entry.to(torch.float32)
                 optimizer.zero_grad()
                 reconstructed = self.auto_encoder(entry)
                 loss = loss_function(reconstructed, entry)
@@ -290,14 +290,15 @@ class AutoEncoder:
             l_loss = np.array(list(map(self.__item_function, temp_loss_batch)))
             temp_avg_loss_epoch = l_loss.mean()
             self.outputs["avg_loss_by_epoch"].append(temp_avg_loss_epoch)
-            # self.outputs["outputs"].append((epochs, entry, reconstructed))
 
-    def forward(self, vector):
-        """Trains AutoEncoder"""
-        self.__normalize_data()
-        self.__log_run("training")
-        self.auto_encoder.apply(self.__init_weights)
-        self.data_loader = self.__load_data("batch_size", "num_workers", True)
+
+    def predict(self, forward_data):
+        """Predicts data after trained AutoEncoder"""
+        self.__log_run("predicting")
+        with torch.no_grad():
+            input_tensor = torch.from_numpy(forward_data.T).float()
+            predictions = self.auto_encoder(input_tensor)
+        return predictions.numpy().T
 
     def encode(self):
         """After training, encodes data for surrogate modeling"""
@@ -321,7 +322,7 @@ class AutoEncoder:
             list(map(self.__item_function, self.outputs["error_training"]))
         )
 
-    def plot_quantities_per_epoch(self, quantity):
+    def plot_quantities_per_epoch(self, quantity, save_only=True):
         """Plots quantities computed per epoch."""
         plot_data = np.array(self.outputs[quantity])
         plot_data = plot_data[:, np.newaxis]
@@ -336,7 +337,6 @@ class AutoEncoder:
         if hasattr(self, 'output_folder'):
             plt.savefig(self.output_folder / Path(f"{quantity}.png"))
 
-        # Displaying plot
-        plt.show()
+        if not save_only:
+            plt.show()
 
-        plt.show()

@@ -5,7 +5,36 @@ import os
 import shutil
 from pathlib import Path
 import yaml
-from collections import OrderedDict
+import logging
+
+# Disables log messages when using matplotlib
+logging.getLogger("matplotlib.font_manager").disabled = True
+logging.getLogger("matplotlib.ticker").disabled = True
+
+import logging
+
+# Create a logger
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.DEBUG)
+
+# Create a console handler and set the level to DEBUG
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.CRITICAL)
+
+# Create a file handler and set the level to DEBUG
+file_handler = logging.FileHandler("log_file.txt")
+file_handler.setLevel(logging.DEBUG)
+
+# Create a formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# Add the handlers to the logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+
 
 map_input_function_pytorch = {
     "linear": torch.nn.Linear,

@@ -1,17 +1,12 @@
 """ Functions for building features for surrogate modeling """
 
 import h5py
-import logging
+from src.utils import logger
 import numpy as np
 from natsort import natsorted
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from tqdm import tqdm
 import os
-
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
 
 
 def read_h5_libmesh(filename, dataset):
@@ -134,14 +129,4 @@ def data_normalization(data, params, pipeline_stage, transpose=False):
     return transformed_data, normalization_technique_class
 
 
-def insert_h5_vector(vector, params, vector_dir="reconstructed_vector"):
-    """Injects vector on H5 files for post-processing viz."""
-    filename_output = os.path.join(
-        params["visualization_folder"],
-        vector_dir,
-        "concentration_1.h5",
-    )
-    with h5py.File(filename_output, "r+") as h5_file_output:
-        h5_file_output["concentration"]["concentration_0"]["vector"][...] = vector[
-            :, np.newaxis
-        ]
+

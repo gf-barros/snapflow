@@ -3,20 +3,14 @@ import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from .utils import map_input_function_pytorch
-import logging
+from src.utils import map_input_function_pytorch
+from src.utils import logger
 from pathlib import Path
 import h5py
 import os
 
-# Disables log messages when using matplotlib
-logging.getLogger("matplotlib.font_manager").disabled = True
-logging.getLogger("matplotlib.ticker").disabled = True
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
 
 class AutoEncoderCreator(torch.nn.Module):
     """Class responsible for creating the AutoEncoder NN."""
@@ -197,7 +191,8 @@ class AutoEncoder:
         self.ae_params_dict = params_dict["auto_encoder"]
         if output_folder:
             ae_output_folder = output_folder / Path("auto_encoder")
-            os.mkdir(ae_output_folder)
+            if not os.path.exists(ae_output_folder):
+                os.mkdir(ae_output_folder)
             self.output_folder = ae_output_folder
 
     def __train_test_split(self):
@@ -322,7 +317,7 @@ class AutoEncoder:
             list(map(self.__item_function, self.outputs["error_training"]))
         )
 
-    def plot_quantities_per_epoch(self, quantity, save_only=True):
+    def plot_quantities_per_epoch(self, quantity):
         """Plots quantities computed per epoch."""
         plot_data = np.array(self.outputs[quantity])
         plot_data = plot_data[:, np.newaxis]
@@ -336,7 +331,6 @@ class AutoEncoder:
 
         if hasattr(self, 'output_folder'):
             plt.savefig(self.output_folder / Path(f"{quantity}.png"))
+        plt.close()
 
-        if not save_only:
-            plt.show()
 

@@ -1,16 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
+from src.utils import logger
 from pathlib import Path
 import os
 
-# Disables log messages when using matplotlib
-logging.getLogger("matplotlib.font_manager").disabled = True
-logging.getLogger("matplotlib.ticker").disabled = True
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+
 
 
 class SVD:
@@ -46,7 +40,8 @@ class SVD:
         self.svd_params_dict = params_dict["svd"]
         if output_folder:
             svd_output_folder = output_folder / Path("svd")
-            os.mkdir(svd_output_folder)
+            if not os.path.exists(svd_output_folder):
+                os.mkdir(svd_output_folder)
             self.output_folder = svd_output_folder
 
     def __diagonalize_s(self):
@@ -109,7 +104,7 @@ class SVD:
             case "randomized_svd":
                 self.__randomized_svd()
 
-    def plot_singular_values(self, save_only=True):
+    def plot_singular_values(self):
         """Plots singular values computed."""
         plot_data = self.s[:, np.newaxis]
         plot_data = np.insert(plot_data, 1, range(1, plot_data.shape[0] + 1), axis=1)
@@ -125,7 +120,5 @@ class SVD:
 
         if hasattr(self, 'output_folder'):
             plt.savefig(self.output_folder / Path("singular_values.png"))
-
-        if not save_only:
-            plt.show()
+        plt.close()
 

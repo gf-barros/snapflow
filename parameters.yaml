@@ -6,10 +6,10 @@ normalization:
   autoencoder: null
   surrogate: null
 splitting:
-  strategy: "temporal" #["temporal", "kfold", "train_test", train_val]
+  strategy: "kfold" #["temporal", "kfold", "train_test", train_val]
   number_of_folds_or_splits: 2
   train_size: 0.8
-  validation_size: 300
+  validation_size: 0.1
   test_size: 0.1
   gap: 0
 snapshots:
@@ -19,7 +19,7 @@ snapshots:
   file_name_contains: ['concentration']
   dataset: null
 svd:
-  trunc_basis: 27
+  trunc_basis: 10
   normalization: "min_max"
   svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1

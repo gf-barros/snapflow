@@ -1,7 +1,7 @@
 """ Functions for building features for surrogate modeling """
 
 import h5py
-from src.utils import logger
+from src.utils import logger, timing_decorator
 import numpy as np
 from natsort import natsorted
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
@@ -52,7 +52,7 @@ def read_h5_fenics(filename):
         data_array = h5_file_input["concentration"]["concentration_0"]["vector"][...]
     return data_array
 
-
+@timing_decorator
 def snapshots_assembly(snapshots_params):
     """
     Function used to assembly snapshots matrix from csv, h5 or vtk files.
@@ -114,7 +114,7 @@ def snapshots_assembly(snapshots_params):
         snapshots[:, i] = np.squeeze(data)
     return filenames, snapshots
 
-
+@timing_decorator
 def data_normalization(data, params, pipeline_stage, transpose=False):
     if transpose:
         data = data.T

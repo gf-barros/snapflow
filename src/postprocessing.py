@@ -6,7 +6,7 @@ import csv
 from pathlib import Path
 import shutil
 import h5py
-from src.utils import logger
+from src.utils import logger, timing_decorator
 
 
 def write_dict_to_csv(file_path, data_dict):
@@ -32,8 +32,8 @@ def create_l2_error_bar_chart(l2_norm_dict, fold, output_folder, analysis_type="
     plt.title(f'L2 norm error for fold {fold}')
     plt.axhline(y=max_value, color='red', linestyle='--', label=f'Max Value ({max_value:.2f})')
 
-    for i, v in enumerate(values):
-        plt.text(indices[i], v + 0.1, f'{v:.2f}', ha='center', va='bottom')
+    # for i, v in enumerate(values):
+    #     plt.text(indices[i], v + 0.1, f'{v:.2f}', ha='center', va='bottom')
 
     #plt.legend()
 
@@ -66,34 +66,23 @@ def insert_h5_vector(vector, paraview_output_folder):
             :, np.newaxis
         ]
 
-def save_paraview_visualization(l2_norm_error, indices, ground_truth, prediction, output_folder, plots="max"):
+def save_paraview_visualization(vector, output_folder, plot_name):
     paraview_input_folder = Path(os.path.join("data/visualization"))
     if output_folder:
         paraview_output_folder = output_folder / Path("paraview_plots")
         if not os.path.exists(paraview_output_folder):
             os.mkdir(paraview_output_folder)
 
-    if plots == "max":
-        max_error_index = max(l2_norm_error.items(), key=lambda x: x[1])[0]
-        max_error_list_index = list(indices).index(max_error_index)
-        export_dict = {
-            "ground_truth": ground_truth[:, max_error_list_index],
-            "prediction": prediction[:, max_error_list_index],
-            "absolute_error": np.abs(ground_truth[:, max_error_list_index] - prediction[:, max_error_list_index])
-        }
-        for export in export_dict.keys():
-            paraview_output_export_folder = paraview_output_folder / Path(f'{export}_{max_error_index}')
-            if not os.path.exists(paraview_output_export_folder):
-                os.mkdir(paraview_output_export_folder)
-            copy_and_paste_paraview_directory(paraview_input_folder, paraview_output_export_folder)
-            logger.info(export)
-            logger.info(export_dict[export].shape)            
-            insert_h5_vector(export_dict[export], paraview_output_export_folder)
+    paraview_output_export_folder = paraview_output_folder / Path(f'{plot_name}')
+    if not os.path.exists(paraview_output_export_folder):
+        os.mkdir(paraview_output_export_folder)
+    copy_and_paste_paraview_directory(paraview_input_folder, paraview_output_export_folder)         
+    insert_h5_vector(vector, paraview_output_export_folder)
 
 
 
-
-def compute_errors(fold, prediction, ground_truth, indices, output_folder, analysis_type="train", modeling_type="backtest"):
+@timing_decorator
+def compute_errors(fold, prediction, ground_truth, indices, output_folder, paraview_plot="first", analysis_type="train", modeling_type="backtest"):
     logger.info("-------------------- Computing Errors and Metrics --------------------")
     logger.info(ground_truth.shape)
     logger.info(prediction.shape)
@@ -126,9 +115,9 @@ def compute_errors(fold, prediction, ground_truth, indices, output_folder, analy
     logger.info("-------------------- Computing L2 error bar chart --------------------")
     create_l2_error_bar_chart(l2_norm_error, fold, output_folder, analysis_type)
 
-    # Create Paraview visualization across all (or any) data
-    logger.info("-------------------- Computing Paraview visualization --------------------")
-    save_paraview_visualization(l2_norm_error, indices, ground_truth, prediction, output_folder, plots="max")
+    # # Create Paraview visualization across all (or any) data
+    # logger.info("-------------------- Computing Paraview visualization --------------------")
+    # save_paraview_visualization(l2_norm_error, indices, ground_truth, prediction, output_folder, plots=paraview_plot)
     
     # Move logging file to output folder
     copy_and_paste_log_file_directory(Path("."), output_folder)

@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 import yaml
 import logging
+import time
 
 # Disables log messages when using matplotlib
 logging.getLogger("matplotlib.font_manager").disabled = True
@@ -13,7 +14,11 @@ logging.getLogger("matplotlib.ticker").disabled = True
 
 import logging
 
-# Create a logger
+# Delete log file and create a logger
+try:
+    os.remove("log_file.txt")
+except OSError:
+    pass
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.DEBUG)
 
@@ -57,3 +62,23 @@ def setup_output_folder(params):
     with open(parameters_file_export, 'w') as output_files_params:
         yaml.dump(params, output_files_params, sort_keys=False) 
     return output_folder         
+
+
+def timing_decorator(func):
+    def wrapper(*args, **kwargs):
+        if 'function_times' not in wrapper.__dict__:
+            wrapper.__dict__['function_times'] = {}
+
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        function_name = func.__name__
+        wrapper.__dict__['function_times'][function_name] = elapsed_time
+
+        logger.info(f"{function_name} took {elapsed_time} seconds to execute.")
+
+        return result
+
+    return wrapper

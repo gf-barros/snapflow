@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.utils import logger
+from src.utils import logger, timing_decorator
 from pathlib import Path
+import shutil
+import h5py
 import os
 
 
@@ -94,6 +96,7 @@ class SVD:
         self.__truncate_svd()
         return
 
+    @timing_decorator
     def fit(self):
         """Computes the SVD depending on the desired algorithm. Preprocessing steps
         can be applied before factorization.
@@ -121,4 +124,5 @@ class SVD:
         if hasattr(self, 'output_folder'):
             plt.savefig(self.output_folder / Path("singular_values.png"))
         plt.close()
+
 

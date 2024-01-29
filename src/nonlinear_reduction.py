@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from src.utils import map_input_function_pytorch
-from src.utils import logger
+from src.utils import logger, timing_decorator
 from pathlib import Path
 import h5py
 import os
@@ -250,6 +250,7 @@ class AutoEncoder:
     def __item_function(self, x):
         return x.item()
 
+    @timing_decorator
     def fit(self):
         """Trains AutoEncoder"""
         self.__log_run("training")
@@ -286,7 +287,7 @@ class AutoEncoder:
             temp_avg_loss_epoch = l_loss.mean()
             self.outputs["avg_loss_by_epoch"].append(temp_avg_loss_epoch)
 
-
+    @timing_decorator
     def predict(self, forward_data):
         """Predicts data after trained AutoEncoder"""
         self.__log_run("predicting")
@@ -317,7 +318,7 @@ class AutoEncoder:
             list(map(self.__item_function, self.outputs["error_training"]))
         )
 
-    def plot_quantities_per_epoch(self, quantity):
+    def plot_quantities_per_epoch(self, quantity, fold):
         """Plots quantities computed per epoch."""
         plot_data = np.array(self.outputs[quantity])
         plot_data = plot_data[:, np.newaxis]
@@ -330,7 +331,7 @@ class AutoEncoder:
         ax.set_yscale("log")
 
         if hasattr(self, 'output_folder'):
-            plt.savefig(self.output_folder / Path(f"{quantity}.png"))
+            plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
         plt.close()
 
 

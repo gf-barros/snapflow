@@ -7,12 +7,10 @@ import h5py
 import os
 
 
-
-
 class SVD:
     """Class responsible for computing the SVD factorization"""
 
-    def __init__(self, data, params_dict, output_folder=None):
+    def __init__(self, data, params_dict, analysis_type="train", output_folder=None):
         """Instantiation of the SVD class.
 
         Parameters
@@ -39,6 +37,7 @@ class SVD:
         self.s = None
         self.vt = None
         self.data = data
+        self.phase_type = analysis_type
         self.svd_params_dict = params_dict["svd"]
         if output_folder:
             svd_output_folder = output_folder / Path("svd")
@@ -89,9 +88,6 @@ class SVD:
         u_vectors_y, self.s, self.vt = np.linalg.svd(
             y_reduced_matrix, full_matrices=False
         )
-        # print(self.u.shape)
-        print(q_values.shape)
-        print(u_vectors_y.shape)
         self.u = q_values @ u_vectors_y
         self.__truncate_svd()
         return
@@ -121,8 +117,6 @@ class SVD:
         ax.set_ylabel("Singular Values")
         ax.set_yscale("log")
 
-        if hasattr(self, 'output_folder'):
-            plt.savefig(self.output_folder / Path("singular_values.png"))
+        if hasattr(self, "output_folder"):
+            plt.savefig(self.output_folder / Path(f"singular_values_{self.phase_type}.png"))
         plt.close()
-
-

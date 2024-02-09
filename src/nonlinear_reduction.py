@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from src.utils import map_input_function_pytorch
+from src.utils import map_input_function_pytorch, check_parameters_and_extract, check_parameters_and_extract_layers
 from src.utils import logger, timing_decorator
 from pathlib import Path
 import h5py
@@ -11,6 +11,7 @@ import os
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class AutoEncoderCreator(torch.nn.Module):
     """Class responsible for creating the AutoEncoder NN."""
@@ -66,85 +67,62 @@ class AutoEncoderCreator(torch.nn.Module):
                 )
             )
         )
+    
+    def __create_linear_layer(self, input_size, output_size):
+        """Creates a linear layer."""
+        return map_input_function_pytorch["linear"](input_size, output_size)
+
+    def __create_activation_layer(self, key, layer):
+        """Creates an activation layer based on the specified activation function and parameters."""
+        return check_parameters_and_extract_layers(self.ae_params_dict, key, layer)
+
+    def __construct_encoder_layers(self):
+        """Constructs all layers for the encoder."""
+        layers = []
+        input_size = self.data.shape[1]
+
+        # Add the first linear and activation layers
+        layers.append(self.__create_linear_layer(input_size, self.ae_params_dict["hidden_layers_sizes"][0]))
+
+
+        print(self.ae_params_dict["hidden_layers_activation_function_parameters"])
+        # Add subsequent layers
+        for layer_number in range(1, self.ae_params_dict["number_of_hidden_layers"]):
+            layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number - 1))
+            layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][layer_number - 1],
+                                                     self.ae_params_dict["hidden_layers_sizes"][layer_number]))
+        
+        return layers
+
+    def __construct_decoder_layers(self):
+        """Constructs all layers for the decoder."""
+        layers = []
+
+
+        # Add subsequent layers in reverse order
+        for layer_number in reversed(range(self.ae_params_dict["number_of_hidden_layers"] - 1)):
+            print(layer_number)
+            layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number))
+            layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][layer_number + 1],
+                                                     self.ae_params_dict["hidden_layers_sizes"][layer_number ]))
+
+        # Add the final linear layer to map back to the input size
+        input_size = self.data.shape[1]
+        layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][0], input_size))
+
+        return layers
 
     def __create_nn_graph(self):
         """Creates self.decoder and self.encoder from YAML file."""
-        input_size = self.data.shape[1]
+        encoder_layers = self.__construct_encoder_layers()
+        decoder_layers = self.__construct_decoder_layers()
 
-        layers_encoder = []
-        layers_decoder = []
+        encoder_layers = self.__filter_none_layers_from_list(encoder_layers)
+        decoder_layers = self.__filter_none_layers_from_list(decoder_layers)
 
-        # Defining first layers for the encoder
-        layers_encoder.append(
-            map_input_function_pytorch["linear"](
-                input_size,
-                self.ae_params_dict["hidden_layers_sizes"][0],
-            )
-        )
-        layers_encoder.append(
-            map_input_function_pytorch[
-                self.ae_params_dict["hidden_layers_activation_function"][0]
-            ](self.ae_params_dict["hidden_layers_activation_function_parameters"][0])
-        )
-
-        # Defining first layers for the decoder
-        layers_decoder.append(
-            map_input_function_pytorch[
-                self.ae_params_dict["decoder_activation_function"]
-            ]()
-        )
-
-        layers_decoder.append(
-            map_input_function_pytorch["linear"](
-                self.ae_params_dict["hidden_layers_sizes"][0],
-                input_size,
-            )
-        )
-
-        for layer_number in range(1, self.ae_params_dict["number_of_hidden_layers"]):
-            layers_encoder.append(
-                map_input_function_pytorch["linear"](
-                    self.ae_params_dict["hidden_layers_sizes"][layer_number - 1],
-                    self.ae_params_dict["hidden_layers_sizes"][layer_number],
-                )
-            )
-            layers_encoder.append(
-                map_input_function_pytorch[
-                    self.ae_params_dict["hidden_layers_activation_function"][
-                        layer_number
-                    ]
-                ](
-                    self.ae_params_dict["hidden_layers_activation_function_parameters"][
-                        layer_number
-                    ]
-                )
-            )
-            layers_decoder.append(
-                map_input_function_pytorch[
-                    self.ae_params_dict["hidden_layers_activation_function"][
-                        layer_number - 1
-                    ]
-                ](
-                    self.ae_params_dict["hidden_layers_activation_function_parameters"][
-                        layer_number - 1
-                    ]
-                )
-            )
-            layers_decoder.append(
-                map_input_function_pytorch["linear"](
-                    self.ae_params_dict["hidden_layers_sizes"][layer_number],
-                    self.ae_params_dict["hidden_layers_sizes"][layer_number - 1],
-                )
-            )
-
-        layers_encoder = self.__filter_none_layers_from_list(layers_encoder)
-        layers_decoder = self.__filter_none_layers_from_list(layers_decoder)
-
-        self.encoder = torch.nn.Sequential(*torch.nn.ModuleList(layers_encoder))
-        self.decoder = torch.nn.Sequential(
-            *torch.nn.ModuleList(reversed(layers_decoder))
-        )
-
+        self.encoder = torch.nn.Sequential(*torch.nn.ModuleList(encoder_layers))
+        self.decoder = torch.nn.Sequential(*torch.nn.ModuleList(decoder_layers))
+    
     def forward(self, data):
         """forward pass for the AutoEncoder architecture."""
         encoded = self.encoder(data)
@@ -195,9 +173,6 @@ class AutoEncoder:
                 os.mkdir(ae_output_folder)
             self.output_folder = ae_output_folder
 
-    def __train_test_split(self):
-        pass  # TODO:
-
     def __log_run(self, log_type="training"):
         if log_type == "training":
             logger.info(
@@ -208,31 +183,8 @@ class AutoEncoder:
                 f" # of layers: {self.ae_params_dict['number_of_hidden_layers']}"
             )
             logger.info(f" Encoder architecture: {self.auto_encoder.encoder}")
+            logger.info(f" Decoder architecture: {self.auto_encoder.decoder}")
 
-    def __load_data(self, data, key_batch_size, key_num_workers, shuffle_flag):
-        """Sets up DataLoader
-
-        Parameters
-        ----------
-        key_batch_size : int
-            _description_
-        key_num_workers : int
-            _description_
-        shuffle_flag : bool
-            _description_
-
-        Returns
-        -------
-        torch.utils.data.dataloader.DataLoader
-            _description_
-        """
-        data_loader = DataLoader(
-            dataset=data,
-            batch_size=self.ae_params_dict[key_batch_size],
-            num_workers=self.ae_params_dict[key_num_workers],
-            shuffle=shuffle_flag,
-        )
-        return data_loader
 
     def __init_weights(self, m):
         """Initializes weights according to desired strategy.
@@ -243,9 +195,7 @@ class AutoEncoder:
             _description_
         """
         if isinstance(m, torch.nn.Linear):
-            torch.nn.init.kaiming_normal_(
-                m.weight, mode="fan_in", nonlinearity="leaky_relu"
-            )
+            check_parameters_and_extract(self.ae_params_dict, "initializer", m.weight)
 
     def __item_function(self, x):
         return x.item()
@@ -255,16 +205,10 @@ class AutoEncoder:
         """Trains AutoEncoder"""
         self.__log_run("training")
         self.auto_encoder.apply(self.__init_weights)
-        self.data_loader = self.__load_data(self.data, "batch_size", "num_workers", True)
-        loss_function = map_input_function_pytorch[
-            self.ae_params_dict["loss_function"]
-        ](self.ae_params_dict["loss_parameters"]["beta"])
-        print(type(self.data_loader))
-        optimizer = torch.optim.Adam(
-            self.auto_encoder.parameters(),
-            lr=float(self.ae_params_dict["learning_rate"]),
-            weight_decay=float(self.ae_params_dict["weight_decay"]),
-        )
+        
+        self.data_loader = check_parameters_and_extract(self.ae_params_dict, "data_loader", extra_param=self.data)
+        loss_function = check_parameters_and_extract(self.ae_params_dict, "loss_function")
+        optimizer = check_parameters_and_extract(self.ae_params_dict, "optimizer", extra_param=self.auto_encoder.parameters())
 
         epochs = self.ae_params_dict["num_epochs"]
 
@@ -274,7 +218,7 @@ class AutoEncoder:
         for _ in tqdm(range(epochs)):
             losses_batches_per_epoch = []
             for entry in self.data_loader:
-                #entry = entry.to(torch.float32)
+                # entry = entry.to(torch.float32)
                 optimizer.zero_grad()
                 reconstructed = self.auto_encoder(entry)
                 loss = loss_function(reconstructed, entry)
@@ -296,29 +240,15 @@ class AutoEncoder:
             predictions = self.auto_encoder(input_tensor)
         return predictions.numpy().T
 
-    def encode(self):
+    def encode(self, data):
         """After training, encodes data for surrogate modeling"""
-        print("\nCalculating training error for each vector")
-        self.data_loader_training = self.__load_data(
-            "batch_size_training_error", "num_workers_training_errors", False
-        )
-        loss_function = torch.nn.SmoothL1Loss(beta=2.0)
+        with torch.no_grad():
+            input_tensor = torch.from_numpy(data.T).float()
+            encoded = self.auto_encoder.encoder(input_tensor)
+        return encoded.detach().numpy()
 
-        self.outputs["error_training"] = []
-        self.outputs["reconstructed_vectors"] = []
 
-        for i, vector in enumerate(loader_2):
-            encoder_decoder = self.auto_encoder(vector)
-            error = loss_function(vector, encoder_decoder)
-            self.outputs["error_training"].append(error)
-
-            self.outputs["reconstructed_vectors"].append(encoder_decoder)
-
-        self.outputs["error_training_np"] = np.array(
-            list(map(self.__item_function, self.outputs["error_training"]))
-        )
-
-    def plot_quantities_per_epoch(self, quantity, fold):
+    def plot_quantities_per_epoch(self, quantity, fold=0):
         """Plots quantities computed per epoch."""
         plot_data = np.array(self.outputs[quantity])
         plot_data = plot_data[:, np.newaxis]
@@ -330,8 +260,6 @@ class AutoEncoder:
         ax.set_ylabel(quantity)
         ax.set_yscale("log")
 
-        if hasattr(self, 'output_folder'):
+        if hasattr(self, "output_folder"):
             plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
         plt.close()
-
-

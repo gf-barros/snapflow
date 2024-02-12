@@ -5,7 +5,7 @@ import csv
 from pathlib import Path
 import shutil
 import h5py
-from src.utils import logger, timing_decorator
+from snapflow.utils import logger, timing_decorator
 
 
 def write_dict_to_csv(file_path, data_dict):

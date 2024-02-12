@@ -1,5 +1,5 @@
 from sklearn.model_selection import TimeSeriesSplit, train_test_split, KFold
-from src.utils import logger, timing_decorator
+from snapflow.utils import logger, timing_decorator
 import numpy as np
 import pandas as pd
 from natsort import natsorted

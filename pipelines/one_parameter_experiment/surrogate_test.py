@@ -15,15 +15,22 @@
 # %load_ext autoreload
 # %autoreload 2
 
+from pathlib import Path
+import sys
+
+current_working_directory = Path.cwd()
+root_directory = current_working_directory.parent.parent
+sys.path.append(str(root_directory))
+
 import numpy as np
 from yaml import safe_load, YAMLError
-from src.utils import setup_output_folder, timing_decorator
-from src.snapshots import snapshots_assembly, data_normalization
-from src.linear_reduction import SVD
-from src.nonlinear_reduction import AutoEncoder
-from src.surrogate import NeuralNetwork
-from src.data_split import DataSplitter
-from src.postprocessing import compute_errors, save_paraview_visualization
+from snapflow.utils import setup_output_folder, timing_decorator
+from snapflow.snapshots import snapshots_assembly, data_normalization
+from snapflow.linear_reduction import SVD
+from snapflow.nonlinear_reduction import AutoEncoder
+from snapflow.surrogate import NeuralNetwork
+from snapflow.data_split import DataSplitter
+from snapflow.postprocessing import compute_errors, save_paraview_visualization
 
 with open("parameters.yaml", "r") as stream:
     try:

@@ -23,7 +23,7 @@ except OSError:
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.DEBUG)
 
-# Create a console handler and set the level to DEBUG
+# Create a console handler and set the level to CRITICAL
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.CRITICAL)
 

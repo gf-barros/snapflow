@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.utils import logger, timing_decorator
+from snapflow.utils import logger, timing_decorator
 from pathlib import Path
 import shutil
 import h5py

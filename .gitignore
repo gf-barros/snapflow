@@ -5,6 +5,9 @@
 *.pyc
 *.zip
 *.DS_Store
+*.egg-info
+__pycache__/
+*pyc
 *.csv
 .ipynb_checkpoints/
 src/.ipynb_checkpoints

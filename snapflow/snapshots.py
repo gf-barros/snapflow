@@ -1,7 +1,7 @@
 """ Functions for building features for surrogate modeling """
 
 import h5py
-from src.utils import logger, timing_decorator
+from snapflow.utils import logger, timing_decorator
 import numpy as np
 from natsort import natsorted
 from sklearn.preprocessing import MinMaxScaler, StandardScaler

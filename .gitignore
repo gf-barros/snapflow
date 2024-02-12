@@ -1,0 +1,17 @@
+*.h5
+*.hdf5
+*.xdmf
+*.xmf
+*.pyc
+*.zip
+*.DS_Store
+*.egg-info
+*.npy
+__pycache__/
+*pyc
+*.csv
+.ipynb_checkpoints/
+src/.ipynb_checkpoints
+data/output/*
+!data/output/.gitkeep
+log_file.txt

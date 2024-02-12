@@ -3,6 +3,7 @@
 import h5py
 from snapflow.utils import logger, timing_decorator
 import numpy as np
+from pathlib import Path
 from natsort import natsorted
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from tqdm import tqdm
@@ -82,27 +83,35 @@ def snapshots_assembly(snapshots_params):
     """
     logger.info("Starting choice of file type:")
     file_type_str = snapshots_params["file_type_str"]
+    print("file_type_str", file_type_str)
+    match file_type_str:
+        case "h5_libmesh":
+            logger.info("libMesh/EdgeCFD HDF5 file selected.")
+            dataset = snapshots_params["dataset"]
+            ingestion_function = read_h5_libmesh
+            ingestion_parameters = [filenames[0], dataset]
+        case "h5_fenics":
+            logger.info("FEniCS HDF5 file selected.")
+            filenames = []
+            for contain_files in snapshots_params["file_name_contains"]:
+                logger.info(
+                    f"Searching for files that containg the string '{contain_files}'."
+                )
+                for dirpath, _, file_names in os.walk(snapshots_params["folder"]):
+                    for f in file_names:
+                        if f.endswith(".h5"):  # and contain_files in f:
+                            filenames.append(os.path.join(dirpath, f))
+            logger.info(f"{len(filenames)} snapshots found.")
+            filenames = natsorted(filenames)
+            ingestion_function = read_h5_fenics
+            ingestion_parameters = [filenames[0]]
+        case "numpy":
+            logger.info("Numpy array file selected.")
+            snapshots_dir = Path(snapshots_params["folder"])
+            filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + ".npy")
+            snapshots = np.load(filename)
+            return [filename], snapshots
 
-    if file_type_str == "h5_libmesh":
-        logger.info("libMesh/EdgeCFD HDF5 file selected.")
-        dataset = snapshots_params["dataset"]
-        ingestion_function = read_h5_libmesh
-        ingestion_parameters = [filenames[0], dataset]
-    elif file_type_str == "h5_fenics":
-        logger.info("FEniCS HDF5 file selected.")
-        filenames = []
-        for contain_files in snapshots_params["file_name_contains"]:
-            logger.info(
-                f"Searching for files that containg the string '{contain_files}'."
-            )
-            for dirpath, _, file_names in os.walk(snapshots_params["folder"]):
-                for f in file_names:
-                    if f.endswith(".h5"):  # and contain_files in f:
-                        filenames.append(os.path.join(dirpath, f))
-        logger.info(f"{len(filenames)} snapshots found.")
-        filenames = natsorted(filenames)
-        ingestion_function = read_h5_fenics
-        ingestion_parameters = [filenames[0]]
 
     first_snapshot = ingestion_function(*ingestion_parameters)
     rows = first_snapshot.shape[0]

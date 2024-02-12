@@ -6,6 +6,7 @@
 *.zip
 *.DS_Store
 *.egg-info
+*.npy
 __pycache__/
 *pyc
 *.csv

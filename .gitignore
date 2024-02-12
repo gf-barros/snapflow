@@ -3,8 +3,11 @@
 *.xdmf
 *.xmf
 *.pyc
+*.zip
+*.DS_Store
 *.csv
 .ipynb_checkpoints/
 src/.ipynb_checkpoints
 data/output/*
+!data/output/.gitkeep
 log_file.txt

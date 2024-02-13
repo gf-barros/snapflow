@@ -13,13 +13,14 @@ class DataSplitter:
 
     def __distribute_split_data(self, data, splits):
         for i, (train_index, val_index) in enumerate(splits):
+            logger.info(f'Splitting fold {i} of {len(splits)}')
             train_index = natsorted(train_index)
             val_index = natsorted(val_index)
             self.folded_data[i] = {}
             self.folded_data[i].update({"train": data.values[train_index, :].T})
             self.folded_data[i].update({"validation": data.values[val_index, :].T})
-            self.folded_data[i].update({"train_indices": train_index})
-            self.folded_data[i].update({"validation_indices": val_index})
+            self.folded_data[i].update({"train_indices": np.array(train_index)})
+            self.folded_data[i].update({"validation_indices": np.array(val_index)})
         return
 
     def _temporal_split(self, data):

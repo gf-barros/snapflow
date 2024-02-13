@@ -5,6 +5,7 @@
 *.pyc
 *.zip
 *.DS_Store
+*.png
 *.egg-info
 *.npy
 __pycache__/
@@ -12,6 +13,5 @@ __pycache__/
 *.csv
 .ipynb_checkpoints/
 src/.ipynb_checkpoints
-data/output/*
-!data/output/.gitkeep
 log_file.txt
+data/output/*

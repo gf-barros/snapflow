@@ -72,7 +72,7 @@ class AutoEncoderCreator(torch.nn.Module):
         """Creates a linear layer."""
         return map_input_function_pytorch["linear"](input_size, output_size)
 
-    def __create_activation_layer(self, key, layer):
+    def __create_activation_layer(self, key, layer=0):
         """Creates an activation layer based on the specified activation function and parameters."""
         return check_parameters_and_extract_layers(self.ae_params_dict, key, layer)
 
@@ -81,11 +81,9 @@ class AutoEncoderCreator(torch.nn.Module):
         layers = []
         input_size = self.data.shape[1]
 
-        # Add the first linear and activation layers
+        # Add first encoder layer
         layers.append(self.__create_linear_layer(input_size, self.ae_params_dict["hidden_layers_sizes"][0]))
 
-
-        print(self.ae_params_dict["hidden_layers_activation_function_parameters"])
         # Add subsequent layers
         for layer_number in range(1, self.ae_params_dict["number_of_hidden_layers"]):
             layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number - 1))
@@ -99,15 +97,16 @@ class AutoEncoderCreator(torch.nn.Module):
         layers = []
 
 
-        # Add subsequent layers in reverse order
+        # Add all layers in reverse order
         for layer_number in reversed(range(self.ae_params_dict["number_of_hidden_layers"] - 1)):
-            print(layer_number)
             layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number))
             layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][layer_number + 1],
                                                      self.ae_params_dict["hidden_layers_sizes"][layer_number ]))
 
-        # Add the final linear layer to map back to the input size
+
+        # Add the final activation layer and linear layer to map back to the input size
         input_size = self.data.shape[1]
+        layers.append(self.__create_activation_layer("decoder_activation_function"))
         layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][0], input_size))
 
         return layers

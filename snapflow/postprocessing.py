@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
+import pandas as pd
 from pathlib import Path
 import shutil
 import h5py
@@ -32,11 +33,6 @@ def create_l2_error_bar_chart(l2_norm_dict, fold, output_folder, analysis_type="
     plt.axhline(
         y=max_value, color="red", linestyle="--", label=f"Max Value ({max_value:.2f})"
     )
-
-    # for i, v in enumerate(values):
-    #     plt.text(indices[i], v + 0.1, f'{v:.2f}', ha='center', va='bottom')
-
-    # plt.legend()
 
     if output_folder:
         plt.savefig(output_folder / Path(f"l2_error_{analysis_type}_fold_{fold}.png"))
@@ -109,8 +105,6 @@ def compute_errors(
     logger.info(
         "-------------------- Computing Errors and Metrics --------------------"
     )
-    logger.info(ground_truth.shape)
-    logger.info(prediction.shape)
 
     output_dict = {}
     if output_folder:
@@ -135,20 +129,21 @@ def compute_errors(
     logger.info(
         "-------------------- Computing L2 Norm across all data --------------------"
     )
+    ground_truth_df = pd.DataFrame(ground_truth, columns=indices)
+    prediction_df = pd.DataFrame(prediction, columns=indices)
+
     l2_norm_error = {}
-    entry = 0
-    for index in indices:
-        l2_norm_error[index] = np.linalg.norm(
-            prediction[entry, :] - ground_truth[entry, :], 2
-        ) / np.linalg.norm(ground_truth[entry, :], 2)
-        entry += 1
+    for column in ground_truth_df.columns:
+        diff = ground_truth_df[column] - prediction_df[column]
+        norm_diff = np.linalg.norm(diff)
+        norm_original = np.linalg.norm(ground_truth_df[column])
+        l2_norm_error[column] = norm_diff / norm_original
 
     # Plot L2 norm across all data
     logger.info(
         "-------------------- Computing L2 error bar chart --------------------"
     )
     create_l2_error_bar_chart(l2_norm_error, fold, output_folder, analysis_type)
-
 
     # Move logging file to output folder
     copy_and_paste_log_file_directory(Path("."), output_folder)

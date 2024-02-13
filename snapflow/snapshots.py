@@ -83,7 +83,6 @@ def snapshots_assembly(snapshots_params):
     """
     logger.info("Starting choice of file type:")
     file_type_str = snapshots_params["file_type_str"]
-    print("file_type_str", file_type_str)
     match file_type_str:
         case "h5_libmesh":
             logger.info("libMesh/EdgeCFD HDF5 file selected.")

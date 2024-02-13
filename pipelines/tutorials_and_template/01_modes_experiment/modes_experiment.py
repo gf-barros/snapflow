@@ -7,11 +7,18 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: turbiditos_surrogate_vscode
+#     display_name: turbiditos_surrogate
 #     language: python
-#     name: turbiditos_surrogate
+#     name: python3
 # ---
 
+# ## Tutorial 01 - Modes Reconstruction
+#
+# In this tutorial, we are going to test our implementations of the SVD factorization and the AutoEncoder.
+#
+# We start by running our mandatory preamble for properly defining directions to our source code.
+
+# +
 # %load_ext autoreload
 # %autoreload 2
 
@@ -19,9 +26,13 @@ from pathlib import Path
 import sys
 
 current_working_directory = Path.cwd()
-root_directory = current_working_directory.parent.parent
+root_directory = current_working_directory.parent.parent.parent
 sys.path.append(str(root_directory))
+# -
 
+# ### Loading the modules for the pipeline
+#
+# Then, we load all modules required for this experiment
 
 from yaml import safe_load, YAMLError
 from snapflow.utils import setup_output_folder, timing_decorator
@@ -31,6 +42,9 @@ from snapflow.nonlinear_reduction import AutoEncoder
 from snapflow.data_split import DataSplitter
 from snapflow.postprocessing import compute_errors, save_paraview_visualization
 
+# ### Load parameters file, define experiment name (if needed) and load files
+
+# +
 with open("parameters.yaml", "r") as stream:
     try:
         params = safe_load(stream)
@@ -42,7 +56,17 @@ if params["origin_experiment_name"] == "input":
 
 filenames, snapshots = snapshots_assembly(params["snapshots"])
 
-# +
+
+# -
+
+# ### Setup the pipeline
+#
+# Now, we create a function to execute the whole pipeline. The function itself is not mandatory, but it could be interesting to isolate the variables into the scope of the pipeline. We are going to time the execution of the pipeline using the `@timing_decorator`.
+#
+# In this pipeline, we setup two different approaches: the `backtest` and the `inference`. The backtest is often used when we want to evaluate the components of the pipeline separately. It might be necessary to change the ML model, perform hyperparameter tuning, validate hypothesis and so on. Once everything is setup, we can perform the inference, by training our selected model with the training data and testing with the test set. It is good practice to remove the `test` set during backtest, to avoid overfitting into the test set, leading to misleading performance of the model before deploying it into production. 
+#
+# That is, whenever we are performing backtest, the `train` and `test` are already split at first. Then, during backtest, we split the total `train` data into `train` and `validation` data and perform our backtest. As soon as the model is chosen and defined, we can train the model with the total `train` data and analyze its performance with the `test` set.
+
 @timing_decorator
 def pipeline_modes(backtest_flag = True, inference_flag = False):
     # setup directories
@@ -135,9 +159,6 @@ def pipeline_modes(backtest_flag = True, inference_flag = False):
             total_normalized_test_predictions = auto_encoder.predict(total_normalized_spatial_test_modes)
             total_test_predictions = u_normalization_total_test_obj.inverse_transform(total_normalized_test_predictions)
             compute_errors(fold, total_test_predictions, 0, total_test_indices, output_folder, paraview_plot="first", analysis_type="test", modeling_type="inference")
-    
-
-# -
 
 # %%capture
 pipeline_modes(inference_flag=False)

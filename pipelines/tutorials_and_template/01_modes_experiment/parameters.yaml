@@ -1,5 +1,5 @@
-origin_experiment_name: input #["input", "yaml"]
-experiment_name: "test_surrogate"
+origin_experiment_name: yaml #["input", "yaml"]
+experiment_name: "epochs_5000"
 random_state: 42
 snapshots:
   file_type_str: 'numpy' #h5_libmesh
@@ -9,7 +9,7 @@ snapshots:
   dataset: null
 splitting:
   strategy: "kfold" #["temporal", "kfold", "train_test", train_val]
-  number_of_folds_or_splits: 5
+  number_of_folds_or_splits: 2
   train_size: 0.8
   validation_size: 0.1
   test_size: 0.1
@@ -17,11 +17,10 @@ splitting:
 normalization:
   snapshots: null
   svd: "min_max"
-  auto_encoder: "min_max"
+  auto_encoder: null
   surrogate: null
 svd:
-  trunc_basis: 30
-  normalization: "min_max"
+  trunc_basis: 270
   svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1
   oversampling: 20
@@ -30,9 +29,9 @@ auto_encoder:
   data_loader_parameters:
     active: True
     parameters:
-      batch_size: 30
-      num_workers: 2
-  num_epochs: 1
+      batch_size: 64
+      num_workers: 4
+  num_epochs: 5000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True

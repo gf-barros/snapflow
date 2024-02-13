@@ -10,7 +10,7 @@ import h5py
 import os
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 
 class AutoEncoderCreator(torch.nn.Module):
@@ -99,15 +99,16 @@ class AutoEncoderCreator(torch.nn.Module):
 
         # Add all layers in reverse order
         for layer_number in reversed(range(self.ae_params_dict["number_of_hidden_layers"] - 1)):
-            layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number))
             layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][layer_number + 1],
                                                      self.ae_params_dict["hidden_layers_sizes"][layer_number ]))
+            layers.append(self.__create_activation_layer("hidden_layers_activation_function", layer_number))
+
 
 
         # Add the final activation layer and linear layer to map back to the input size
         input_size = self.data.shape[1]
-        layers.append(self.__create_activation_layer("decoder_activation_function"))
         layers.append(self.__create_linear_layer(self.ae_params_dict["hidden_layers_sizes"][0], input_size))
+        layers.append(self.__create_activation_layer("decoder_activation_function"))
 
         return layers
 
@@ -166,6 +167,8 @@ class AutoEncoder:
         self.outputs = {}
         self.data = self.auto_encoder.data
         self.ae_params_dict = params_dict["auto_encoder"]
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Device used: {device}")
         if output_folder:
             ae_output_folder = output_folder / Path("auto_encoder")
             if not os.path.exists(ae_output_folder):

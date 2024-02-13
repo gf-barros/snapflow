@@ -77,8 +77,13 @@ auto_encoder:
         negative_slope : 0.2
       3 : 
         negative_slope : 0.2 
-  decoder_activation_function: "sigmoid"
-  decoder_activation_function_parameter: null
+  decoder_activation_function: 
+      0: "sigmoid"
+  decoder_activation_function_parameters: 
+    active: 
+      0: False
+    parameters:
+      0: null
 neural_network:
   data_loader: "data_loader"
   data_loader_parameters:

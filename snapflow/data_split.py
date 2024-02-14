@@ -1,5 +1,5 @@
 from sklearn.model_selection import TimeSeriesSplit, train_test_split, KFold
-from snapflow.utils import logger, timing_decorator
+from snapflow.utils import logger, timing_decorator, check_parameters_and_extract
 import numpy as np
 import pandas as pd
 from natsort import natsorted
@@ -25,16 +25,19 @@ class DataSplitter:
 
     def _temporal_split(self, data):
         # TODO: code WFCV from scratch
-        data = pd.DataFrame()
+        data = pd.DataFrame(data)
         logger.info(
             "-------------------- Starting temporal cross validation strategy --------------------"
         )
-        tscv = TimeSeriesSplit(
-            n_splits=self.splitting_params.get("number_of_folds_or_splits"),
-            test_size=self.splitting_params.get("validation_size"),
-            gap=self.splitting_params.get("gap"),
-        )
+        tscv = check_parameters_and_extract(self.splitting_params, "splitting_strategy")
+        # tscv = TimeSeriesSplit(
+        #     n_splits=self.splitting_params.get("number_of_folds_or_splits"),
+        #     test_size=self.splitting_params.get("validation_size"),
+        #     gap=self.splitting_params.get("gap"),
+        # )
+        logger.info(tscv)
         splits = list(tscv.split(data))
+        logger.info(splits)
         self.__distribute_split_data(data, splits)
         return self.folded_data
 
@@ -135,11 +138,12 @@ class DataSplitter:
         data = pd.DataFrame(data=data, columns=column_names)
         data = data.T
         if train_test_flag:
+            logger.info("Train/Test split selected.")
             folded_data = self._preserve_test_data(data)
             self._log_run(folded_data)
             return folded_data
 
-        match self.splitting_params.get("strategy"):
+        match self.splitting_params.get("splitting_strategy"):
             case "temporal":
                 folded_data = self._temporal_split(data)
             case "kfold":

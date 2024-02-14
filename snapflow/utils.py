@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from torch.utils.data import DataLoader
+from sklearn.model_selection import TimeSeriesSplit
 import yaml
 import logging
 import time
@@ -50,7 +51,8 @@ map_input_function_pytorch = {
     "mse_loss": torch.nn.MSELoss,
     "adam": torch.optim.Adam,
     "kaiming_normal": torch.nn.init.kaiming_normal_,
-    "data_loader": DataLoader
+    "data_loader": DataLoader,
+    "temporal": TimeSeriesSplit,
 }
 
 def check_parameters_and_extract(dict, key, extra_param=None):

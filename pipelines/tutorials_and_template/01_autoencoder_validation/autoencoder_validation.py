@@ -7,12 +7,12 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: turbiditos_surrogate
+#     display_name: turbiditos_surrogate_vscode
 #     language: python
-#     name: python3
+#     name: turbiditos_surrogate
 # ---
 
-# ## Tutorial 01 - Modes Reconstruction
+# ## Tutorial 01 - Autoencoder validation
 #
 # In this tutorial, we are going to test our implementations of the SVD factorization and the AutoEncoder.
 #
@@ -72,27 +72,33 @@ def pipeline_modes(backtest_flag = True, inference_flag = False):
     # setup directories
     output_folder = setup_output_folder(params)
 
-    # high dimensional data
-    svd = SVD(snapshots, params, output_folder)
-    svd.fit()
-    svd.plot_singular_values()
-    save_paraview_visualization(svd.u[:, 0], output_folder, "original_mode_0")
-
-    spatial_modes = svd.u
-    print(f"spatial modes dim: {spatial_modes.shape}")
-
-    # train_test split
+    #train_test split
     data_splitter = DataSplitter(params)
-    folded_data = data_splitter.split_data(spatial_modes, train_test_flag=True)
-    total_train_data = folded_data[0]["train"]
-    total_test_data = folded_data[0]["test"] 
-    save_paraview_visualization(total_train_data[:, 0], output_folder, "train_test_split_mode_0")
-    print("train_data shape", total_train_data.shape)
-    print("train_data type", type(total_train_data))
+    folded_data = data_splitter.split_data(snapshots, train_test_flag=True)
+    train_data = folded_data[0]["train"]
+    test_data = folded_data[0]["test"] 
+    total_train_indices = folded_data[0]["train_indices"]
+    total_test_indices = folded_data[0]["test_indices"]
+    save_paraview_visualization(train_data[:, 0], output_folder, "train_split_ic")
+    save_paraview_visualization(test_data[:, 0], output_folder, "test_split_ic")
+
+    # First Reduction
+    svd_train = SVD(train_data, params, output_folder=output_folder, analysis_type="train")
+    svd_train.fit()
+    svd_train.plot_singular_values()
+    save_paraview_visualization(svd_train.u[:, 0], output_folder, "train_mode_0")
+
+    svd_test = SVD(test_data, params, output_folder=output_folder, analysis_type="test")
+    svd_test.fit()
+    svd_test.plot_singular_values() 
+    save_paraview_visualization(svd_train.u[:, 0], output_folder, "test_mode_0")
+
+    projected_train_data = svd_train.u.T @ train_data
+    projected_test_data = svd_test.u.T @ test_data
 
     if backtest_flag:
         # train_val split
-        model_selection_data = data_splitter.split_data(total_train_data, train_test_flag=False)
+        model_selection_data = data_splitter.split_data(projected_train_data, train_test_flag=False)
 
         # fold artifacts:
         for fold in model_selection_data.keys():
@@ -100,36 +106,37 @@ def pipeline_modes(backtest_flag = True, inference_flag = False):
             fold_train_indices = model_selection_data[fold]["train_indices"]
             fold_validation_data = model_selection_data[fold]["validation"]
             fold_validation_indices = model_selection_data[fold]["validation_indices"]
-            save_paraview_visualization(fold_train_data[:, 0], output_folder, "train_val_split_mode_0")
 
-            # preprocess high dimensional data
-            normalized_spatial_train_modes, u_normalization_train_fold_obj = data_normalization(
-            fold_train_data, params, "svd", transpose=False
+
+            # normalize training and validation data
+            normalized_projected_train_data, normalization_projected_train_obj = data_normalization(
+            fold_train_data, params, "auto_encoder", transpose=False
             )    
-            save_paraview_visualization(normalized_spatial_train_modes[:, 0], output_folder, "preprocessed_train_split_mode_0")
 
             # fit high dimensional data
-            auto_encoder = AutoEncoder(normalized_spatial_train_modes, params, output_folder)
+            auto_encoder = AutoEncoder(normalized_projected_train_data, params, output_folder)
             auto_encoder.fit()
             auto_encoder.plot_quantities_per_epoch("avg_loss_by_epoch", fold)
 
             # compute error for training data
-            normalized_train_predictions = auto_encoder.predict(normalized_spatial_train_modes)
-            train_predictions = u_normalization_train_fold_obj.inverse_transform(normalized_train_predictions)
-            save_paraview_visualization(train_predictions[:, 0], output_folder, "postprocessed_prediction_split_mode_0")
-            compute_errors(fold, train_predictions, fold_train_data, fold_train_indices, output_folder, analysis_type="train", modeling_type="backtest")
+            normalized_train_predictions = auto_encoder.predict(normalized_projected_train_data)
+            train_predictions = normalization_projected_train_obj.inverse_transform(normalized_train_predictions)
+            high_dimensional_train_predictions = svd_train.u @ train_predictions
+            high_dimensional_fold_train_data = svd_train.u @ fold_train_data
+            save_paraview_visualization(high_dimensional_train_predictions[:, 0], output_folder, f"postprocessed_prediction_train_{fold_train_indices[0]}_fold_{fold}")
+            compute_errors(fold, high_dimensional_train_predictions, high_dimensional_fold_train_data, fold_train_indices, output_folder, analysis_type="train", modeling_type="backtest")
 
             # compute error for validation data
             if fold_validation_data is not None:
-                normalized_spatial_val_modes, u_normalization_val_fold_obj = data_normalization(
-                fold_validation_data, params, "svd", transpose=False
+                normalized_projected_validation_data, normalization_projected_validation_obj = data_normalization(
+                fold_validation_data, params, "auto_encoder", transpose=False
                 )    
-                print(f"normalized spatial train modes dim: {normalized_spatial_train_modes.shape}")
-                print(f"normalized spatial val modes dim: {normalized_spatial_val_modes.shape}")
-                normalized_val_predictions = auto_encoder.predict(normalized_spatial_val_modes)
-                val_predictions = u_normalization_val_fold_obj.inverse_transform(normalized_val_predictions)
-                compute_errors(fold, val_predictions, fold_validation_data, fold_validation_indices, output_folder, analysis_type="validation", modeling_type="backtest")
-                
+                normalized_validation_predictions = auto_encoder.predict(normalized_projected_validation_data)
+                validation_predictions = normalization_projected_validation_obj.inverse_transform(normalized_validation_predictions)
+                high_dimensional_validation_predictions = svd_train.u @ validation_predictions
+                high_dimensional_fold_validation_data = svd_train.u @ fold_validation_data
+                save_paraview_visualization(high_dimensional_validation_predictions[:, 0], output_folder, f"postprocessed_prediction_validation_{fold_train_indices[0]}_fold_{fold}")
+                compute_errors(fold, high_dimensional_validation_predictions, high_dimensional_fold_validation_data, fold_validation_indices, output_folder, analysis_type="train", modeling_type="backtest")
 
     if inference_flag:
             # train for all data
@@ -159,6 +166,7 @@ def pipeline_modes(backtest_flag = True, inference_flag = False):
             total_normalized_test_predictions = auto_encoder.predict(total_normalized_spatial_test_modes)
             total_test_predictions = u_normalization_total_test_obj.inverse_transform(total_normalized_test_predictions)
             compute_errors(fold, total_test_predictions, 0, total_test_indices, output_folder, paraview_plot="first", analysis_type="test", modeling_type="inference")
+
 
 # %%capture
 pipeline_modes(inference_flag=False)

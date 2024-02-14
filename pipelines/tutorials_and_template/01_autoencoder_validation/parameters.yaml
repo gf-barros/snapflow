@@ -1,5 +1,5 @@
 origin_experiment_name: yaml #["input", "yaml"]
-experiment_name: "epochs_5000"
+experiment_name: "epochs_5000_temporal"
 random_state: 42
 snapshots:
   file_type_str: 'numpy' #h5_libmesh
@@ -8,16 +8,15 @@ snapshots:
   file_name_contains: ['snapshots']
   dataset: null
 splitting:
-  strategy: "kfold" #["temporal", "kfold", "train_test", train_val]
-  number_of_folds_or_splits: 2
-  train_size: 0.8
-  validation_size: 0.1
-  test_size: 0.1
-  gap: 0
+  splitting_strategy: "temporal" #["temporal", "kfold", "train_test", train_val]
+  splitting_strategy_parameters:
+    active: True
+    parameters: 
+      n_splits: 3
 normalization:
   snapshots: null
-  svd: "min_max"
-  auto_encoder: null
+  svd: null
+  auto_encoder: "min_max"
   surrogate: null
 svd:
   trunc_basis: 270
@@ -83,58 +82,3 @@ auto_encoder:
       0: False
     parameters:
       0: null
-neural_network:
-  data_loader: "data_loader"
-  data_loader_parameters:
-    active: True
-    parameters:
-      batch_size: 30
-      num_workers: 2
-  num_epochs: 1
-  initializer: "kaiming_normal"
-  initializer_parameters:
-    active: True
-    parameters:
-      mode: "fan_in"
-      nonlinearity: "leaky_relu"
-  optimizer: "adam"
-  optimizer_parameters:
-    active: True
-    parameters: 
-      lr: 0.005
-  adaptive_learning_parameters:
-    active: True
-    parameters:
-      step_size: 50
-      gamma: 0.75
-  loss_function: "mse_loss"
-  loss_function_parameters: 
-    active: False
-    parameters: null
-  num_workers: 2
-  number_of_hidden_layers: 5
-  hidden_layers_sizes: 
-    0: 50
-    1: 50
-    2: 50
-    3: 50
-    4: 50
-  hidden_layers_activation_function:
-    0: "sigmoid"
-    1: "sigmoid"
-    2: "sigmoid"
-    3: "sigmoid"
-    4: "sigmoid"
-  hidden_layers_activation_function_parameters:
-    active: 
-      0 : False
-      1 : False
-      2 : False
-      3 : False
-      4 : False
-    parameters:
-      0 : null
-      1 : null
-      2 : null 
-      3 : null 
-      4 : null

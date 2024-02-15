@@ -78,7 +78,6 @@ def check_parameters_and_extract(dict, key, extra_param=None):
         
 def check_parameters_and_extract_layers(dict, key, layer=0):
     key_params = key + "_parameters"
-    print(key, dict[key][layer], layer, dict[key_params]["parameters"][layer], map_input_function_pytorch[dict[key][layer]])
     if dict[key_params]["active"][layer]:
         return map_input_function_pytorch[
             dict[key][layer]

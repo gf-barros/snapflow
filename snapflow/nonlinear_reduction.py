@@ -1,12 +1,10 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from snapflow.utils import map_input_function_pytorch, check_parameters_and_extract, check_parameters_and_extract_layers
 from snapflow.utils import logger, timing_decorator
 from pathlib import Path
-import h5py
 import os
 
 

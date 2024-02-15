@@ -1,5 +1,5 @@
 origin_experiment_name: yaml #["input", "yaml"]
-experiment_name: "epochs_5000_temporal"
+experiment_name: "epochs_10000"
 random_state: 42
 snapshots:
   file_type_str: 'numpy' #h5_libmesh
@@ -30,7 +30,7 @@ auto_encoder:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 5000
+  num_epochs: 10000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True

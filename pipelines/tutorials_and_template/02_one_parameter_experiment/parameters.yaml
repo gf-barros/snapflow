@@ -2,10 +2,9 @@ origin_experiment_name: yaml #["input", "yaml"]
 experiment_name: "test_surrogate"
 random_state: 42
 snapshots:
-  file_type_str: 'h5_fenics' #h5_libmesh
+  file_type_str: 'numpy' #h5_libmesh
   folder: 'data/input'
-  visualization_folder: 'data/visualization'
-  file_name_contains: ['concentration']
+  file_name_contains: ['snapshots']
   dataset: null
 splitting:
   strategy: "train_val" #["temporal", "kfold", "train_test", train_val]
@@ -30,8 +29,8 @@ auto_encoder:
   data_loader_parameters:
     active: True
     parameters:
-      batch_size: 30
-      num_workers: 2
+      batch_size: 64
+      num_workers: 4
   num_epochs: 1
   initializer: "kaiming_normal"
   initializer_parameters:
@@ -77,15 +76,20 @@ auto_encoder:
         negative_slope : 0.2
       3 : 
         negative_slope : 0.2 
-  decoder_activation_function: "sigmoid"
-  decoder_activation_function_parameter: null
+  decoder_activation_function: 
+      0: "sigmoid"
+  decoder_activation_function_parameters: 
+    active: 
+      0: False
+    parameters:
+      0: null
 neural_network:
   data_loader: "data_loader"
   data_loader_parameters:
     active: True
     parameters:
-      batch_size: 30
-      num_workers: 2
+      batch_size: 64
+      num_workers: 4
   num_epochs: 1
   initializer: "kaiming_normal"
   initializer_parameters:

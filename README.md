@@ -1,6 +1,6 @@
 # SnapFlow
 
-![Placeholder for Figure](readme/snapflow_logo.png)
+![SnapFlow](readme/snapflow_logo.png)
 
 SnapFlow is a cutting-edge library designed to streamline the creation of pipelines for surrogate modeling within the domain of multiphase fluid dynamics simulations. By leveraging data-driven approaches, SnapFlow facilitates the development, validation, and prediction processes in computational fluid dynamics (CFD) projects. Currently, SnapFlow supports linear and nonlinear dimensionality reductions as well as Dynamic Mode Decomposition (DMD) and Neural Networks-based surrogate modeling.
 

@@ -162,31 +162,6 @@ class NeuralNetwork:
             logger.info(f" # of layers: {self.nn_params_dict['number_of_hidden_layers']}")
             logger.info(f" NN architecture: {self.created_nn.nn}")
 
-    def __load_data(self, data, key_batch_size, key_num_workers, shuffle_flag):
-        """Sets up DataLoader
-
-        Parameters
-        ----------
-        key_batch_size : int
-            _description_
-        key_num_workers : int
-            _description_
-        shuffle_flag : bool
-            _description_
-
-        Returns
-        -------
-        torch.utils.data.dataloader.DataLoader
-            _description_
-        """
-        data_loader = DataLoader(
-            dataset=data,
-            batch_size=self.nn_params_dict[key_batch_size],
-            num_workers=self.nn_params_dict[key_num_workers],
-            shuffle=shuffle_flag,
-        )
-        return data_loader
-
     def __init_weights(self, m):
         """Initializes weights according to desired strategy.
 
@@ -209,9 +184,7 @@ class NeuralNetwork:
 
         self.__log_run("training")
         self.created_nn.apply(self.__init_weights)
-        self.data_loader = self.__load_data(
-            self.data, "batch_size", "num_workers", True
-        )
+        self.data_loader = check_parameters_and_extract(self.nn_params_dict, "data_loader", extra_param=self.data)
         loss_function = check_parameters_and_extract(self.nn_params_dict, "loss_function")
         optimizer = check_parameters_and_extract(self.nn_params_dict, "optimizer", extra_param=self.created_nn.parameters())
 

@@ -97,6 +97,12 @@ class DataSplitter:
             self.folded_data[0].update({"validation_indices": val_data.T.columns})
         return self.folded_data
 
+    def _simple_split(self, data):
+        self.folded_data[0] = {}
+        self.folded_data[0].update({"data": data.values.T})
+        self.folded_data[0].update({"indices": np.array(data.columns)})
+        return self.folded_data
+
     def _preserve_test_data(self, data, shuffle=False):
         folded_data = self._standard_split(data, size_type="test_size", shuffle=shuffle)
         return folded_data
@@ -133,10 +139,15 @@ class DataSplitter:
                         )
 
     @timing_decorator
-    def split_data(self, data, train_test_flag=False):
+    def split_data(self, data, train_test_flag=False, simple_split=False):
         column_names = [str(i) for i in range(data.shape[1])]
         data = pd.DataFrame(data=data, columns=column_names)
         data = data.T
+        if simple_split:
+            logger.info("Simple split selected.")
+            folded_data = self._simple_split(data)
+            return folded_data            
+
         if train_test_flag:
             logger.info("Train/Test split selected.")
             folded_data = self._preserve_test_data(data)

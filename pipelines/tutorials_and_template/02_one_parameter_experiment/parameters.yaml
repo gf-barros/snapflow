@@ -31,7 +31,7 @@ auto_encoder:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 100
+  num_epochs: 5000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -90,7 +90,7 @@ neural_network:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 100
+  num_epochs: 5000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True

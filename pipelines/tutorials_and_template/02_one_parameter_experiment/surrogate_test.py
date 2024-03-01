@@ -79,10 +79,12 @@ def pipeline_surrogate():
     folded_data = data_splitter.split_data(train_snapshots, simple_split=True)
     train_data = folded_data[0]["data"]
     train_indices = folded_data[0]["indices"]
+    train_spatial_indices = folded_data[0]["spatial_indices"]
 
     folded_data = data_splitter.split_data(test_snapshots, simple_split=True)
     test_data = folded_data[0]["data"]
     test_indices = folded_data[0]["indices"]
+    test_spatial_indices = folded_data[0]["spatial_indices"]
 
     print("train snapshots size", train_data.shape)
     print("train indices size", train_indices.shape)
@@ -167,6 +169,7 @@ def pipeline_surrogate():
                     prediction=train_predictions, 
                     ground_truth=train_data, 
                     indices=train_indices, 
+                    spatial_indices=train_spatial_indices,
                     output_folder=output_folder, 
                     analysis_type="train", 
                     modeling_type="inference"
@@ -185,6 +188,7 @@ def pipeline_surrogate():
                     prediction=test_predictions, 
                     ground_truth=test_data, 
                     indices=test_indices, 
+                    spatial_indices=test_spatial_indices,
                     output_folder=output_folder, 
                     analysis_type="test", 
                     modeling_type="inference"

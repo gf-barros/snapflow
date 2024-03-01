@@ -21,7 +21,7 @@ normalization:
 svd:
   trunc_basis: 270
   normalization: "min_max"
-  svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
+  svd_type: "full_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1
   oversampling: 20
 auto_encoder:
@@ -31,7 +31,7 @@ auto_encoder:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 5000
+  num_epochs: 100
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -90,7 +90,7 @@ neural_network:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 5000
+  num_epochs: 100
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True

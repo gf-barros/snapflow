@@ -48,11 +48,12 @@ snapshots_dir = Path(snapshots_params["folder"])
 filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + f"_{str(0)}.npy")
 train_snapshots = np.load(filename)
 train_snapshots = train_snapshots[:, ::5]
+number_of_train_time_steps = train_snapshots.shape[1]
 
 
 print("train snapshots size", train_snapshots.shape)
 
-for i in tqdm([2]):
+for i in tqdm([2, 4, 6, 8]):
     filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + f"_{str(i)}.npy")
     snapshots_temp = np.load(filename)
     snapshots_temp = snapshots_temp[:, ::5]
@@ -64,6 +65,7 @@ print("train snapshots size", train_snapshots.shape)
 filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + f"_{str(10)}.npy")
 test_snapshots = np.load(filename)
 test_snapshots = test_snapshots[:, ::5]
+number_of_test_time_steps = test_snapshots.shape[1]
 
 print("test snapshots size", test_snapshots.shape)
 # +
@@ -137,8 +139,8 @@ def pipeline_surrogate():
     print(f"normalized total latent train data dim: {normalized_latent_train_data.shape}")
 
     # train surrogate
-    nn_train_data = np.array([(angle, int(step)) for angle in [0] for step in train_indices])
-    nn_test_data = np.array([(angle, int(step)) for angle in [10] for step in test_indices])
+    nn_train_data = np.array([(angle, int(step)) for angle in [0, 2, 4, 6, 8] for step in range(number_of_train_time_steps)])
+    nn_test_data = np.array([(angle, int(step)) for angle in [10] for step in range(number_of_test_time_steps)])
 
     print("nn_train_data shape", nn_train_data.shape)
     neural_network = NeuralNetwork(nn_train_data, normalized_latent_train_data, params, output_folder)

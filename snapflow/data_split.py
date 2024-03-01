@@ -100,7 +100,7 @@ class DataSplitter:
     def _simple_split(self, data):
         self.folded_data[0] = {}
         self.folded_data[0].update({"data": data.values.T})
-        self.folded_data[0].update({"indices": np.array(data.columns)})
+        self.folded_data[0].update({"indices": np.array(data.T.columns)})
         return self.folded_data
 
     def _preserve_test_data(self, data, shuffle=False):

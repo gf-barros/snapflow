@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from snapflow.utils import map_input_function_pytorch, check_parameters_and_extract
@@ -37,8 +37,11 @@ class NeuralNetworkCreator(torch.nn.Module):
             A dictionary containing all the modeling parameters.
         """
         super().__init__()
-        self.input_data = torch.tensor(input_data.T, dtype=torch.float32)
-        self.target_data = torch.tensor(target_data.T, dtype=torch.float32)        
+        self.input_data = torch.tensor(input_data, dtype=torch.float32)
+        self.target_data = torch.tensor(target_data.T, dtype=torch.float32)  
+        self.dataset = TensorDataset(self.input_data, self.target_data)
+        logger.info(self.input_data.shape)      
+        logger.info(self.target_data.shape)      
         self.nn_params_dict = params_dict["neural_network"]
         self.nn = None
         self.layers_nn = []
@@ -67,23 +70,23 @@ class NeuralNetworkCreator(torch.nn.Module):
             )
         )
     
-    def __create_nn_layer(self, layer_input_size, layer_output_size, layer_number=0):
+    def __create_nn_layer(self, layer_input_size, layer_output_size, layer_number=0, layer_type="hidden"):
         self.layers_nn.append(
             map_input_function_pytorch["linear"](
                 layer_input_size,
                 layer_output_size,
             )
         )
-        if self.nn_params_dict["hidden_layers_activation_function_parameters"]["active"][layer_number]: 
+        if self.nn_params_dict[f"{layer_type}_layers_activation_function_parameters"]["active"][layer_number]: 
             self.layers_nn.append(
                 map_input_function_pytorch[
-                    self.nn_params_dict["hidden_layers_activation_function"][layer_number]
-                ](**self.nn_params_dict["hidden_layers_activation_function_parameters"]["parameters"][layer_number])
+                    self.nn_params_dict[f"{layer_type}_layers_activation_function"][layer_number]
+                ](**self.nn_params_dict[f"{layer_type}_layers_activation_function_parameters"]["parameters"][layer_number])
             )
         else: 
             self.layers_nn.append(
                 map_input_function_pytorch[
-                    self.nn_params_dict["hidden_layers_activation_function"][layer_number]
+                    self.nn_params_dict[f"{layer_type}_layers_activation_function"][layer_number]
                 ]()
             )
 
@@ -101,6 +104,10 @@ class NeuralNetworkCreator(torch.nn.Module):
                                    self.nn_params_dict["hidden_layers_sizes"][layer_number],
                                    layer_number)
         
+        self.__create_nn_layer(self.nn_params_dict["hidden_layers_sizes"][layer_number], 
+                                target_size,
+                                0,
+                                "output")
 
         self.layers_nn = self.__filter_none_layers_from_list(self.layers_nn)
 
@@ -146,6 +153,7 @@ class NeuralNetwork:
         self.normalization_technique_class = None
         self.outputs = {}
         self.data = self.created_nn.input_data
+        self.dataset = self.created_nn.dataset
         self.nn_params_dict = params_dict["neural_network"]
         if output_folder:
             nn_output_folder = output_folder / Path("neural_network")
@@ -184,7 +192,7 @@ class NeuralNetwork:
 
         self.__log_run("training")
         self.created_nn.apply(self.__init_weights)
-        self.data_loader = check_parameters_and_extract(self.nn_params_dict, "data_loader", extra_param=self.data)
+        self.data_loader = check_parameters_and_extract(self.nn_params_dict, "data_loader", extra_param=self.dataset)
         loss_function = check_parameters_and_extract(self.nn_params_dict, "loss_function")
         optimizer = check_parameters_and_extract(self.nn_params_dict, "optimizer", extra_param=self.created_nn.parameters())
 
@@ -193,12 +201,14 @@ class NeuralNetwork:
         self.outputs["outputs"] = []
         self.outputs["avg_loss_by_epoch"] = []
 
+        logger.info(self.data_loader)
+
         for _ in tqdm(range(epochs)):
             losses_batches_per_epoch = []
-            for entry in self.data_loader:
+            for entry, target in self.data_loader:
                 optimizer.zero_grad()
-                reconstructed = self.created_nn(entry)
-                loss = loss_function(reconstructed, entry)
+                predictions = self.created_nn(entry)
+                loss = loss_function(predictions, target)
                 loss.backward()
                 optimizer.step()
 
@@ -213,7 +223,7 @@ class NeuralNetwork:
         """Predicts data after trained NeuralNetwork"""
         self.__log_run("predicting")
         with torch.no_grad():
-            input_tensor = torch.from_numpy(forward_data.T).float()
+            input_tensor = torch.from_numpy(forward_data).float()
             predictions = self.created_nn(input_tensor)
         return predictions.numpy().T
 

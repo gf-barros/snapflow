@@ -19,7 +19,7 @@ normalization:
   auto_encoder: "min_max"
   surrogate: "min_max"
 svd:
-  trunc_basis: 30
+  trunc_basis: 270
   normalization: "min_max"
   svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
   power_iterations: 1
@@ -31,7 +31,7 @@ auto_encoder:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 1
+  num_epochs: 5000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -90,7 +90,7 @@ neural_network:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 1
+  num_epochs: 5000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -138,3 +138,10 @@ neural_network:
       2 : null 
       3 : null 
       4 : null
+  output_layers_activation_function: 
+      0: "sigmoid"
+  output_layers_activation_function_parameters: 
+    active: 
+      0: False
+    parameters:
+      0: null

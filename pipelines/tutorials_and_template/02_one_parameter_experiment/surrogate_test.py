@@ -47,8 +47,12 @@ snapshots_params = params["snapshots"]
 snapshots_dir = Path(snapshots_params["folder"])
 filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + f"_{str(0)}.npy")
 train_snapshots = np.load(filename)
+train_snapshots = train_snapshots[:, ::5]
 
-for i in tqdm([2, 4, 6, 8]):
+
+print("train snapshots size", train_snapshots.shape)
+
+for i in tqdm([2]):
     filename = snapshots_dir / Path(snapshots_params["file_name_contains"][0] + f"_{str(i)}.npy")
     snapshots_temp = np.load(filename)
     snapshots_temp = snapshots_temp[:, ::5]
@@ -79,23 +83,26 @@ def pipeline_surrogate():
     test_indices = folded_data[0]["indices"]
 
     print("train snapshots size", train_data.shape)
-    print("test snapshots size", train_indices.shape)
-    print("train indices size", test_data.shape)
+    print("train indices size", train_indices.shape)
+    print("test snapshots size", test_data.shape)
     print("test indices size", test_indices.shape)
 
     save_paraview_visualization(train_data[:, 0], output_folder, "train_split_ic")
     save_paraview_visualization(test_data[:, 0], output_folder, "test_split_ic")
 
+
+    print("First SVD")
     # First Reduction
     svd_train = SVD(train_data, params, output_folder=output_folder, analysis_type="train")
     svd_train.fit()
     svd_train.plot_singular_values()
     save_paraview_visualization(svd_train.u[:, 0], output_folder, "train_mode_0")
 
+    print("Second SVD")
     svd_test = SVD(test_data, params, output_folder=output_folder, analysis_type="test")
     svd_test.fit()
     svd_test.plot_singular_values()
-    save_paraview_visualization(svd_train.u[:, 0], output_folder, "test_mode_0")
+    save_paraview_visualization(svd_test.u[:, 0], output_folder, "test_mode_0")
 
     projected_train_data = svd_train.u.T @ train_data
     projected_test_data = svd_test.u.T @ test_data
@@ -107,7 +114,7 @@ def pipeline_surrogate():
     normalized_projected_test_data, normalization_projected_test_obj = data_normalization(
     projected_test_data, params, "auto_encoder", transpose=False
     )    
-    print(f"normalized total spatial train modes dim: {normalized_projected_train_data.shape}")
+    print(f"normalized total projected train data dim: {normalized_projected_train_data.shape}")
 
     # fit high dimensional data
     auto_encoder = AutoEncoder(normalized_projected_train_data, params, output_folder)
@@ -116,6 +123,10 @@ def pipeline_surrogate():
     latent_train_data = auto_encoder.encode(normalized_projected_train_data)
     latent_test_data = auto_encoder.encode(normalized_projected_test_data)
 
+    # latent data transpose
+    latent_train_data = latent_train_data.T
+    latent_test_data = latent_test_data.T
+
     # normalize training and test data
     normalized_latent_train_data, normalization_latent_train_obj = data_normalization(
     latent_train_data, params, "surrogate", transpose=False
@@ -123,34 +134,46 @@ def pipeline_surrogate():
     normalized_latent_test_data, normalization_latent_test_obj = data_normalization(
     latent_test_data, params, "surrogate", transpose=False
     )    
-    print(f"normalized total spatial train modes dim: {normalized_projected_train_data.shape}")
+    print(f"normalized total latent train data dim: {normalized_latent_train_data.shape}")
 
     # train surrogate
-    nn_train_data = np.array([(angle, step) for angle in [0, 2, 4, 6, 8] for step in train_indices])
-    nn_test_data = np.array([(angle, step) for angle in [10] for step in test_indices])
+    nn_train_data = np.array([(angle, int(step)) for angle in [0] for step in train_indices])
+    nn_test_data = np.array([(angle, int(step)) for angle in [10] for step in test_indices])
 
+    print("nn_train_data shape", nn_train_data.shape)
     neural_network = NeuralNetwork(nn_train_data, normalized_latent_train_data, params, output_folder)
     neural_network.fit()
-    neural_network.plot_quantities_per_epoch("avg_loss_by_epoch")
+    neural_network.plot_quantities_per_epoch("avg_loss_by_epoch", fold=0)
 
     # compute error for training data
-    normalized_latent_train_predictions = neural_network.predict(normalized_latent_train_data)
+    normalized_latent_train_predictions = neural_network.predict(nn_train_data)
+    print("normalized_latent_train_predictions shape", normalized_latent_train_predictions.shape)
+
     latent_train_predictions = normalization_latent_train_obj.inverse_transform(normalized_latent_train_predictions)
+    print("latent_train_predictions shape", latent_train_predictions.shape)
+
     normalized_decoded_train_predictions = auto_encoder.decode(latent_train_predictions)
+    print("normalized_decoded_train_predictions shape", normalized_decoded_train_predictions.shape)
+
     decoded_train_predictions = normalization_projected_train_obj.inverse_transform(normalized_decoded_train_predictions)
+    print("decoded_train_predictions shape", decoded_train_predictions.shape)
+
     train_predictions = svd_train.u @ decoded_train_predictions
+    print("decoded_train_predictions shape", decoded_train_predictions.shape)
 
     compute_errors(fold=0, 
                     prediction=train_predictions, 
-                    ground_truth=latent_train_data, 
+                    ground_truth=train_data, 
                     indices=train_indices, 
                     output_folder=output_folder, 
                     analysis_type="train", 
                     modeling_type="inference"
                     )
 
+    del train_predictions
+
     # compute error for test data
-    normalized_latent_test_predictions = neural_network.predict(normalized_latent_test_data)
+    normalized_latent_test_predictions = neural_network.predict(nn_test_data)
     latent_test_predictions = normalization_latent_test_obj.inverse_transform(normalized_latent_test_predictions)
     normalized_decoded_test_predictions = auto_encoder.decode(latent_test_predictions)
     decoded_test_predictions = normalization_projected_test_obj.inverse_transform(normalized_decoded_test_predictions)
@@ -158,7 +181,7 @@ def pipeline_surrogate():
 
     compute_errors(fold=0, 
                     prediction=test_predictions, 
-                    ground_truth=latent_test_data, 
+                    ground_truth=test_data, 
                     indices=test_indices, 
                     output_folder=output_folder, 
                     analysis_type="test", 

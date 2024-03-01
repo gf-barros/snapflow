@@ -246,6 +246,13 @@ class AutoEncoder:
             input_tensor = torch.from_numpy(data.T).float()
             encoded = self.auto_encoder.encoder(input_tensor)
         return encoded.detach().numpy()
+    
+    def decode(self, data):
+        """After training, decodes data for surrogate modeling"""
+        with torch.no_grad():
+            input_tensor = torch.from_numpy(data.T).float()
+            encoded = self.auto_encoder.decoder(input_tensor)
+        return encoded.detach().numpy().T
 
 
     def plot_quantities_per_epoch(self, quantity, fold=0):

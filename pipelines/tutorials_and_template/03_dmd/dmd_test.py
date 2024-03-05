@@ -23,12 +23,13 @@ root_directory = current_working_directory.parent.parent.parent
 sys.path.append(str(root_directory))
 
 from yaml import safe_load, YAMLError
+import numpy as np
 from snapflow.utils import setup_output_folder, timing_decorator
 from snapflow.snapshots import snapshots_assembly, data_normalization
 from snapflow.linear_reduction import SVD
 from snapflow.nonlinear_reduction import AutoEncoder
 from snapflow.data_split import DataSplitter
-from snapflow.postprocessing import compute_errors, save_paraview_visualization
+from snapflow.postprocessing import PostProcessing, save_paraview_visualization
 from snapflow.surrogate import DMD
 from tqdm import tqdm
 
@@ -61,6 +62,8 @@ def pipeline_dmd():
     print("train snapshots size", train_data.shape)
     print("train indices size", train_indices.shape)
 
+    print(train_data[:, 0].shape)
+    print(output_folder)
     save_paraview_visualization(train_data[:, 0], output_folder, "train_split_ic")
 
     print("First SVD")
@@ -68,7 +71,7 @@ def pipeline_dmd():
     svd_train = SVD(train_data, params, output_folder=output_folder, analysis_type="train")
     svd_train.fit()
     svd_train.plot_singular_values()
-    save_paraview_visualization(svd_train.u[:, 0], output_folder, "train_mode_0")
+    save_paraview_visualization(svd_train.u[:, -1], output_folder, "train_mode_0")
 
     print(svd_train.u.shape)
     print(svd_train.s.shape)
@@ -80,16 +83,20 @@ def pipeline_dmd():
     dmd_train.plot_eigenvalues()
     train_predictions = dmd_train.dmd_approximation["dmd_matrix"]
 
-    compute_errors(fold=0, 
-                    prediction=train_predictions, 
+    save_paraview_visualization(np.real(train_predictions[:, -1]), output_folder, "pred_test")
+    print(train_spatial_indices)
+    postprocessing = PostProcessing(
+                    fold=0, 
+                    predictions=train_predictions, 
                     ground_truth=train_data, 
                     indices=train_indices, 
                     spatial_indices=train_spatial_indices,
                     output_folder=output_folder, 
-                    params=params,
+                    params_dict=params,
                     analysis_type="test", 
                     modeling_type="inference"
                     )
+    postprocessing.compute_errors()
     # -
 
 # %%capture

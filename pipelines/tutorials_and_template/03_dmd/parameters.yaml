@@ -2,9 +2,9 @@ origin_experiment_name: yaml #["input", "yaml"]
 experiment_name: "test_dmd"
 random_state: 42
 snapshots:
-  file_type_str: 'numpy' #h5_libmesh
+  file_type_str: 'h5_fenics' #h5_libmesh
   folder: 'data/input'
-  file_name_contains: ['snapshots']
+  file_name_contains: ['concentration']
   dataset: null
 splitting:
   strategy: null #["temporal", "kfold", "train_test", train_val]
@@ -23,7 +23,7 @@ dmd:
   dmd_start: 0
   dmd_end: 2999
   dt: 0.01
-metrics:
+postprocessing:
   l2_error_in_sequence: 
     active: True
     clip: null

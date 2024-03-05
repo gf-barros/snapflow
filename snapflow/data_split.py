@@ -142,10 +142,12 @@ class DataSplitter:
     def split_data(self, data, train_test_flag=False, simple_split=False):
         column_names = [str(i) for i in range(data.shape[1])]
         data = pd.DataFrame(data=data, columns=column_names)
+        spatial_indices = data.index
         data = data.T
         if simple_split:
             logger.info("Simple split selected.")
             folded_data = self._simple_split(data)
+            folded_data[0]["spatial_indices"] = spatial_indices
             return folded_data            
 
         if train_test_flag:
@@ -166,4 +168,5 @@ class DataSplitter:
 
         self._log_run(folded_data)
         folded_data = self.__assert_numpy_type(folded_data)
+        logger.info(folded_data.keys())
         return folded_data

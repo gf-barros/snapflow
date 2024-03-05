@@ -122,11 +122,11 @@ def compute_l2_norm_error(ground_truth_df, prediction_df, clip=None):
 
     return l2_norm_error
 
-def save_paraview_largest_and_smallest_errors(l2_norm_error_dict, ground_truth_df, prediction_df, output_folder, fold, analysis_type="train", modeling_type="backtest", clip="none"):
+def save_paraview_largest_and_smallest_errors(l2_norm_error_dict, ground_truth_df, prediction_df, spatial_indices, output_folder, fold, analysis_type="train", modeling_type="backtest", clip="none"):
     # Finding the key with the largest error
     key_largest_error = max(l2_norm_error_dict, key=l2_norm_error_dict.get)
-    ground_truth_largest_error = ground_truth_df[key_largest_error].values
-    prediction_largest_error = prediction_df[key_largest_error].values
+    ground_truth_largest_error = ground_truth_df.loc[spatial_indices, key_largest_error].values
+    prediction_largest_error = prediction_df.loc[spatial_indices, key_largest_error].values
 
     # Saving solutions for largest error
     save_paraview_visualization(
@@ -164,6 +164,7 @@ def compute_errors(
     prediction,
     ground_truth,
     indices,
+    spatial_indices,
     output_folder,
     analysis_type="train",
     modeling_type="backtest",
@@ -226,7 +227,7 @@ def compute_errors(
         "-------------------- Creating Paraview visualization --------------------"
     )
 
-    save_paraview_largest_and_smallest_errors(l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type,)
-    save_paraview_largest_and_smallest_errors(clip_01_l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type, clip=0.1)
-    save_paraview_largest_and_smallest_errors(clip_001_l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type, clip=0.01)
-    save_paraview_largest_and_smallest_errors(clip_0001_l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type, clip=0.001)
+    # save_paraview_largest_and_smallest_errors(l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type,)
+    # save_paraview_largest_and_smallest_errors(clip_01_l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type, clip=0.1)
+    save_paraview_largest_and_smallest_errors(clip_001_l2_norm_error, ground_truth_df, prediction_df, spatial_indices, output_folder, fold, analysis_type, modeling_type, clip=0.01)
+    # save_paraview_largest_and_smallest_errors(clip_0001_l2_norm_error, ground_truth_df, prediction_df, output_folder, fold, analysis_type, modeling_type, clip=0.001)

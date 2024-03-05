@@ -63,7 +63,7 @@ class SVD:
         """
         self.u = self.u[:, : self.svd_params_dict["trunc_basis"]]
         self.s = self.s[: self.svd_params_dict["trunc_basis"]]
-        self.vt = self.vt[:, : self.svd_params_dict["trunc_basis"]]
+        self.vt = self.vt[: self.svd_params_dict["trunc_basis"], : ]
 
     def __svd(self):
         """Computes the full SVD using numpy's algorithm (slower)"""

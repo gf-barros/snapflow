@@ -6,7 +6,6 @@ from tqdm import tqdm
 from snapflow.utils import map_input_function_pytorch, check_parameters_and_extract
 from snapflow.utils import logger, timing_decorator
 from pathlib import Path
-import h5py
 import os
 
 
@@ -241,4 +240,117 @@ class NeuralNetwork:
 
         if hasattr(self, "output_folder"):
             plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
+        plt.close()
+
+
+class DMD:
+    """
+        Instantiation of the DMD class. This class inherits from the SVD 
+        class and utilizes its attributes such as 'U', 'S', and 'V' for 
+        DMD-specific computations.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            A 2D array containing the stacked snapshots.
+        params : dict
+            Dictionary containing the overall parameters.
+        output_folder : Path
+            Path containing the output folder
+
+        Attributes
+        ----------
+        self.svd.u : numpy.ndarray
+            A 2D array containing the left singular vectors modes from self.data.
+        self.svd.s : numpy.ndarray
+            A 1D array containing the singular values from self.data.
+        self.svd.vt : numpy.ndarray
+            A 2D array containing the right singular vectors modes from self.data.
+        self.snapshots_matrix : numpy.ndarray
+            A 2D array containing the stacked snapshots.
+        self.dmd_params_dict : dict
+            A dictionary containing all the modeling parameters.
+        self.snapshots_matrix : ...
+            ....
+            ....
+
+        Returns
+        -------
+        self.dmd_approximation : Dict
+            Dictionary containing modes, eigenvalues, singular values and approximate solution.
+
+    """
+    def __init__(self, svd, data, target, params, output_folder):
+        self.svd = svd
+        self.dmd_params_dict = params["dmd"]
+        self.snapshots_x1 = data
+        self.snapshots_x2 = target
+        self.dmd_approximation = {}
+        if output_folder:
+            dmd_output_folder = output_folder / Path("dmd")
+            if not os.path.exists(dmd_output_folder):
+                os.mkdir(dmd_output_folder)
+            self.output_folder = dmd_output_folder
+
+    @timing_decorator
+    def fit(self):
+        self.svd.s = np.divide(1.0, self.svd.s)
+        self.svd.s = np.diag(self.svd.s)
+        self.svd.u = np.transpose(self.svd.u)
+        self.svd.vt = np.transpose(self.svd.vt)
+        a_tilde = np.linalg.multi_dot(
+            [self.svd.u, self.snapshots_x2, self.svd.vt, self.svd.s]
+        )
+        self.dmd_approximation["eigenvals_original"], eigenvec = np.linalg.eig(a_tilde)
+        eigenval = np.log(self.dmd_approximation["eigenvals_original"]) / (
+            self.dmd_params_dict["dt"]
+        )
+        self.dmd_approximation["eigenvals_processed"] = eigenval
+        phi_dmd = np.linalg.multi_dot(
+            [self.snapshots_x2, self.svd.vt, self.svd.s, eigenvec]
+        )
+        phi_inv = np.linalg.pinv(phi_dmd)
+        initial_vector = self.snapshots_x1[:, 0]
+        b_vector = np.dot(phi_inv, initial_vector)
+        b_vector = b_vector[:, np.newaxis]
+        t_vector = (
+            np.arange(start=self.dmd_params_dict["dmd_start"], stop=self.dmd_params_dict["dmd_end"])
+            * self.dmd_params_dict["dt"]
+        )
+        t_vector = t_vector[np.newaxis, :]
+        self.dmd_approximation["t"] = t_vector
+        self.dmd_approximation["eigenvals_processed"] = eigenval
+        eigenval = eigenval[:, np.newaxis]
+        temp = np.multiply(eigenval, t_vector)
+        temp = np.exp(temp)
+        dynamics = np.multiply(b_vector, temp)
+        x_dmd = np.dot(phi_dmd, dynamics)
+        self.dmd_approximation["dmd_matrix"] = x_dmd
+
+    def plot_eigenvalues(self):
+        data = self.dmd_approximation["eigenvals_original"]
+        real_part = np.real(data)
+        imag_part = np.imag(data)
+
+        # Plotting scatter plot using matplotlib
+        fig, ax = plt.subplots()
+
+        # Plotting the unitary circle
+        theta = np.linspace(0, 2 * np.pi, 100)
+        ax.plot(np.cos(theta), np.sin(theta), linestyle="--", color="grey")
+
+        # Plotting the real and imaginary parts of eigenvalues
+        ax.scatter(real_part, imag_part)
+
+        # Setting x and y axis labels
+        ax.set_xlabel("Real")
+        ax.set_ylabel("Imaginary")
+
+        # Setting axis limits to -1.5 and 1.5 to fit the unitary circle
+        ax.set_xlim(-1.5, 1.5)
+        ax.set_ylim(-1.5, 1.5)
+        plt.gca().set_aspect("equal", adjustable="box")
+
+        if hasattr(self, "output_folder"):
+            plt.savefig(self.output_folder / Path(f"eigenvalues.png"))
         plt.close()

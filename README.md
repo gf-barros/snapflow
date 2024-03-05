@@ -30,8 +30,9 @@ To install SnapFlow and set up the necessary environment, follow these steps:
 
 ```bash
 make create_environment
+conda activate turbiditos_surrogate 
 make requirements
-make vs_code_install
+make vscode_install
 ```
 
 ## Getting Started

@@ -95,12 +95,14 @@ class DataSplitter:
             self.folded_data[0].update({"validation": val_data.T})
             self.folded_data[0].update({"train_indices": train_data.T.columns})
             self.folded_data[0].update({"validation_indices": val_data.T.columns})
+            self.folded_data[0].update({"spatial_indices": train_data.index})
         return self.folded_data
 
     def _simple_split(self, data):
         self.folded_data[0] = {}
         self.folded_data[0].update({"data": data.values.T})
         self.folded_data[0].update({"indices": np.array(data.T.columns)})
+        self.folded_data[0].update({"spatial_indices": data.index})
         return self.folded_data
 
     def _preserve_test_data(self, data, shuffle=False):
@@ -112,6 +114,7 @@ class DataSplitter:
         self.folded_data[0].update({"validation": None})
         self.folded_data[0].update({"train_indices": data.T.columns})
         self.folded_data[0].update({"validation_indices": None})
+        self.folded_data[0].update({"spatial_indices": data.index})
         return self.folded_data
 
     def __assert_numpy_type(self, folded_data):

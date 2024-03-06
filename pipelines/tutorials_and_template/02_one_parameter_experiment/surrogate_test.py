@@ -30,7 +30,7 @@ from snapflow.linear_reduction import SVD
 from snapflow.nonlinear_reduction import AutoEncoder
 from snapflow.surrogate import NeuralNetwork
 from snapflow.data_split import DataSplitter
-from snapflow.postprocessing import compute_errors, save_paraview_visualization
+from snapflow.postprocessing import PostProcessing, save_paraview_visualization
 from tqdm import tqdm
 
 with open("parameters.yaml", "r") as stream:
@@ -165,15 +165,17 @@ def pipeline_surrogate():
     train_predictions = svd_train.u @ decoded_train_predictions
     print("decoded_train_predictions shape", decoded_train_predictions.shape)
 
-    compute_errors(fold=0, 
-                    prediction=train_predictions, 
+    postprocessing_train = PostProcessing(fold=0, 
+                    predictions=train_predictions, 
                     ground_truth=train_data, 
                     indices=train_indices, 
                     spatial_indices=train_spatial_indices,
                     output_folder=output_folder, 
+                    params_dict=params,
                     analysis_type="train", 
                     modeling_type="inference"
                     )
+    postprocessing_train.compute_errors()
 
     del train_predictions
 
@@ -184,26 +186,18 @@ def pipeline_surrogate():
     decoded_test_predictions = normalization_projected_test_obj.inverse_transform(normalized_decoded_test_predictions)
     test_predictions = svd_test.u @ decoded_test_predictions
 
-    compute_errors(fold=0, 
-                    prediction=test_predictions, 
+    postprocessing_test = PostProcessing(fold=0, 
+                    predictions=test_predictions, 
                     ground_truth=test_data, 
                     indices=test_indices, 
                     spatial_indices=test_spatial_indices,
+                    params_dict=params,
                     output_folder=output_folder, 
                     analysis_type="test", 
                     modeling_type="inference"
                     )
-    # -
+
+    postprocessing_test.compute_errors()
 
 # %%capture
 pipeline_surrogate()
-
-# +
-# TODO: jogar no google docs
-# TODO: Save e load do modelo
-# TODO: Plotters e cálculos de erros devem ser classe?
-# TODO: plots de erro estão errados
-# TODO: surrogate
-# -
-
-

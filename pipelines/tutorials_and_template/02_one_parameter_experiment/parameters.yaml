@@ -1,5 +1,5 @@
 origin_experiment_name: yaml #["input", "yaml"]
-experiment_name: "test_surrogate"
+experiment_name: "test_surrogate_full"
 random_state: 42
 snapshots:
   file_type_str: 'numpy' #h5_libmesh
@@ -31,7 +31,7 @@ auto_encoder:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 5000
+  num_epochs: 15000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -90,7 +90,7 @@ neural_network:
     parameters:
       batch_size: 64
       num_workers: 4
-  num_epochs: 5000
+  num_epochs: 15000
   initializer: "kaiming_normal"
   initializer_parameters:
     active: True
@@ -145,3 +145,14 @@ neural_network:
       0: False
     parameters:
       0: null
+postprocessing:
+  l2_error_in_sequence: 
+    active: True
+    clip: null
+    line_plot_error: True
+    bar_plot_error: False
+    paraview_largest_error: True
+    paraview_smallest_error: True
+  paraview_specific_plot: null
+  frobenius_error: True
+  copy_log: True

@@ -53,7 +53,7 @@ from snapflow.snapshots import snapshots_assembly, data_normalization
 from snapflow.linear_reduction import SVD
 from snapflow.nonlinear_reduction import AutoEncoder
 from snapflow.data_split import DataSplitter
-from snapflow.postprocessing import compute_errors, save_paraview_visualization
+from snapflow.postprocessing import PostProcessing, save_paraview_visualization
 
 # ### Reading the YAML file containing the parameters:
 #

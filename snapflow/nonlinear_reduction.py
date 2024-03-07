@@ -270,3 +270,23 @@ class AutoEncoder:
         if hasattr(self, "output_folder"):
             plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
         plt.close()
+
+    def save_model(self):
+        """
+        Saves the model's state dictionary to the specified file path.
+        :param file_path: The path to save the model to.
+        """
+        filepath = Path(self.ae_params_dict["folder"]) / Path("ae.pth")
+        torch.save(self.auto_encoder.state_dict(), filepath)
+        logger.info(f'Model saved to {filepath}')
+
+    def load_model(self):
+        """
+        Loads the model's state dictionary from the specified file path.
+        :param file_path: The path to load the model from.
+        """
+        filepath = Path(self.ae_params_dict["folder"]) / Path("ae.pth")
+        self.auto_encoder.load_state_dict(torch.load(filepath))
+        self.auto_encoder.eval()  # Set the model to evaluation mode
+        logger.info(f'Model loaded from {filepath}')
+

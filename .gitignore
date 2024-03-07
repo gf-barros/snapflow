@@ -4,6 +4,9 @@
 *.xmf
 *.pyc
 *.zip
+*.pvtu
+*.pvd
+*.pth
 *.DS_Store
 *.png
 *.egg-info

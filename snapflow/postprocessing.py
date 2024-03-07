@@ -93,7 +93,7 @@ class PostProcessing():
                 os.mkdir(postproc_output_folder)
             self.output_folder = postproc_output_folder
                 
-    def __write_dict_to_csv(file_path, data_dict):
+    def __write_dict_to_csv(self, file_path, data_dict):
         file_exists = os.path.isfile(file_path)
 
         with open(file_path, "a", newline="") as csvfile:
@@ -260,7 +260,7 @@ class PostProcessing():
             output_dict[self.fold]["analysis_type"] = self.analysis_type
             output_dict[self.fold]["frobenius_rel_error"] = frobenius_norm
             dict_path = general_output_folder / Path(
-                f"general_{self.modeling_type}_{self.analysis_type}.csv"
+                f"general_{self.modeling_type}_{self.analysis_type}_frobenius.csv"
             )
             self.__write_dict_to_csv(dict_path, output_dict)
 
@@ -268,7 +268,11 @@ class PostProcessing():
             logger.info(
                 "-------------------- Computing L2 Norm across all data --------------------"
             )
-            print(self.spatial_indices.shape)
+            if self.output_folder:
+                general_output_folder = self.output_folder / Path("general_outputs")
+            if not os.path.exists(general_output_folder):
+                os.mkdir(general_output_folder)
+
             ground_truth_df = pd.DataFrame(self.ground_truth, columns=self.indices, index=self.spatial_indices)
             prediction_df = pd.DataFrame(self.predictions, columns=self.indices, index=self.spatial_indices)
 
@@ -279,7 +283,13 @@ class PostProcessing():
                 l2_norm_error_dict["no_clip"] = self.compute_l2_norm_error(ground_truth_df, prediction_df) 
             else:
                 for clip in clips:
-                    l2_norm_error_dict[clip] = self.compute_clipped_l2_norm_error(ground_truth_df, prediction_df, clip=clip) 
+                    l2_norm_error_dict[clip] = self.compute_clipped_l2_norm_error(ground_truth_df, prediction_df, clip=clip)
+            for key in l2_norm_error_dict.keys():
+                dict_path = general_output_folder / Path(
+                    f"general_{self.modeling_type}_{self.analysis_type}_l2_{key}.csv"
+                )
+                self.__write_dict_to_csv(dict_path, l2_norm_error_dict[key])
+
             return l2_norm_error_dict, ground_truth_df, prediction_df
 
     

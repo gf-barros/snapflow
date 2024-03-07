@@ -48,11 +48,11 @@ train_folders_list = ["theta" + str(theta) for theta in angles_to_be_trained]
 angles_to_be_tested = [10]
 test_folders_list = ["theta" + str(theta) for theta in angles_to_be_tested]
 
-filenames, train_snapshots = snapshots_assembly_multiple_folders(params["snapshots"], stride=50, folders_list=train_folders_list)
+filenames, train_snapshots = snapshots_assembly_multiple_folders(params["snapshots"], stride=5, folders_list=train_folders_list)
 print("train snapshots size", train_snapshots.shape)
 number_of_train_time_steps = train_snapshots.shape[1]
 
-filenames, test_snapshots = snapshots_assembly_multiple_folders(params["snapshots"], stride=10, folders_list=test_folders_list)
+filenames, test_snapshots = snapshots_assembly_multiple_folders(params["snapshots"], stride=5, folders_list=test_folders_list)
 print("test snapshots size", test_snapshots.shape)
 number_of_test_time_steps = test_snapshots.shape[1]
 # +

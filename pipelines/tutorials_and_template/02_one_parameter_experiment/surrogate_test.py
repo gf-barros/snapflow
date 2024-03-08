@@ -91,7 +91,7 @@ def pipeline_surrogate():
 
     # normalize training and test data
     normalized_projected_train_data, normalization_projected_train_obj = data_normalization(
-    projected_train_data, params, "auto_encoder", transpose=False
+    projected_train_data, params, "auto_encoder", transpose=True
     )    
     print(f"normalized total projected train data dim: {normalized_projected_train_data.shape}")
 
@@ -108,7 +108,7 @@ def pipeline_surrogate():
 
     # normalize training and test data
     normalized_latent_train_data, normalization_latent_train_obj = data_normalization(
-    latent_train_data, params, "surrogate", transpose=False
+    latent_train_data, params, "surrogate", transpose=True
     )    
     print(f"normalized total latent train data dim: {normalized_latent_train_data.shape}")
 
@@ -127,16 +127,16 @@ def pipeline_surrogate():
     normalized_latent_train_predictions = neural_network.predict(nn_train_data)
     print("normalized_latent_train_predictions shape", normalized_latent_train_predictions.shape)
 
-    latent_train_predictions = normalization_latent_train_obj.inverse_transform(normalized_latent_train_predictions)
+    latent_train_predictions = normalization_latent_train_obj.inverse_transform(normalized_latent_train_predictions.T)
     print("latent_train_predictions shape", latent_train_predictions.shape)
 
-    normalized_decoded_train_predictions = auto_encoder.decode(latent_train_predictions)
+    normalized_decoded_train_predictions = auto_encoder.decode(latent_train_predictions.T)
     print("normalized_decoded_train_predictions shape", normalized_decoded_train_predictions.shape)
 
-    decoded_train_predictions = normalization_projected_train_obj.inverse_transform(normalized_decoded_train_predictions)
+    decoded_train_predictions = normalization_projected_train_obj.inverse_transform(normalized_decoded_train_predictions.T)
     print("decoded_train_predictions shape", decoded_train_predictions.shape)
 
-    train_predictions = svd_train.u @ decoded_train_predictions
+    train_predictions = svd_train.u @ decoded_train_predictions.T
     print("decoded_train_predictions shape", decoded_train_predictions.shape)
 
     postprocessing_train = PostProcessing(fold=0, 
@@ -155,10 +155,10 @@ def pipeline_surrogate():
 
     # compute error for test data
     normalized_latent_test_predictions = neural_network.predict(nn_test_data)
-    latent_test_predictions = normalization_latent_train_obj.inverse_transform(normalized_latent_test_predictions)
-    normalized_decoded_test_predictions = auto_encoder.decode(latent_test_predictions)
-    decoded_test_predictions = normalization_projected_train_obj.inverse_transform(normalized_decoded_test_predictions)
-    test_predictions = svd_train.u @ decoded_test_predictions
+    latent_test_predictions = normalization_latent_train_obj.inverse_transform(normalized_latent_test_predictions.T)
+    normalized_decoded_test_predictions = auto_encoder.decode(latent_test_predictions.T)
+    decoded_test_predictions = normalization_projected_train_obj.inverse_transform(normalized_decoded_test_predictions.T)
+    test_predictions = svd_train.u @ decoded_test_predictions.T
 
     postprocessing_test = PostProcessing(fold=0, 
                     predictions=test_predictions, 

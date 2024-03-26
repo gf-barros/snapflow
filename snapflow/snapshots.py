@@ -128,7 +128,7 @@ def snapshots_assembly(snapshots_params, stride=1):
 
 
 @timing_decorator
-def snapshots_assembly_multiple_folders(snapshots_params, stride=1, folders_list=[]):
+def snapshots_assembly_multiple_folders(snapshots_params, stride=1, folders_list=[], local=True, export_prefix=None):
     """
     Function used to assembly snapshots matrix from csv, h5 or vtk files.
 
@@ -155,7 +155,8 @@ def snapshots_assembly_multiple_folders(snapshots_params, stride=1, folders_list
         Numpy 2D array containing the snapshots matrix.
     """
     logger.info("Starting choice of file type:")
-    file_type_str = snapshots_params["file_type_str"]
+    file_type_str = snapshots_params["file_type_str"]       
+
     match file_type_str:
         case "h5_libmesh":
             logger.info("libMesh/EdgeCFD HDF5 file selected.")
@@ -171,6 +172,9 @@ def snapshots_assembly_multiple_folders(snapshots_params, stride=1, folders_list
                         f"Searching for files that containg the string '{contain_files}'."
                     )
                     current_path = Path(snapshots_params["folder"]) / Path(folder)
+                    if not local: 
+                        current_path = Path(export_prefix) / Path(current_path)
+                    logger.info(current_path)
                     for dirpath, _, file_names in os.walk(current_path):
                         for f in file_names:
                             if f.endswith(".h5"):  # and contain_files in f:

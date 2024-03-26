@@ -165,7 +165,14 @@ class AutoEncoder:
         self.outputs = {}
         self.data = self.auto_encoder.data
         self.ae_params_dict = params_dict["auto_encoder"]
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
+
         logger.info(f"Device used: {device}")
         if output_folder:
             ae_output_folder = output_folder / Path("auto_encoder")
@@ -271,12 +278,17 @@ class AutoEncoder:
             plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
         plt.close()
 
-    def save_model(self):
+    def save_model(self, 
+                local=True,
+                export_prefix=None):
         """
         Saves the model's state dictionary to the specified file path.
         :param file_path: The path to save the model to.
         """
-        filepath = Path(self.ae_params_dict["folder"]) / Path("ae.pth")
+        if not local:
+            filepath = Path(export_prefix) / Path(self.ae_params_dict["folder"]) / Path("ae.pth")
+        else:
+            filepath = Path(self.ae_params_dict["folder"]) / Path("ae.pth")
         torch.save(self.auto_encoder.state_dict(), filepath)
         logger.info(f'Model saved to {filepath}')
 

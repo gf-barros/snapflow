@@ -8,9 +8,12 @@ from snapflow.utils import logger, timing_decorator
 from pathlib import Path
 import os
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
 
 class NeuralNetworkCreator(torch.nn.Module):
     """Class responsible for creating the NN."""
@@ -242,14 +245,19 @@ class NeuralNetwork:
             plt.savefig(self.output_folder / Path(f"{quantity}_{fold}.png"))
         plt.close()
 
-    def save_model(self):
-            """
-            Saves the model's state dictionary to the specified file path.
-            :param file_path: The path to save the model to.
-            """
+    def save_model(self, 
+                local=True,
+                export_prefix=None):
+        """
+        Saves the model's state dictionary to the specified file path.
+        :param file_path: The path to save the model to.
+        """
+        if not local:
+            filepath = Path(export_prefix) / Path(self.nn_params_dict["folder"]) / Path("nn.pth")
+        else:
             filepath = Path(self.nn_params_dict["folder"]) / Path("nn.pth")
-            torch.save(self.created_nn.state_dict(), filepath)
-            logger.info(f'Model saved to {filepath}')
+        torch.save(self.created_nn.state_dict(), filepath)
+        logger.info(f'Model saved to {filepath}')
 
     def load_model(self):
             """

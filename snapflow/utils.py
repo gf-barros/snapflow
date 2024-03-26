@@ -9,6 +9,8 @@ from sklearn.model_selection import TimeSeriesSplit
 import yaml
 import logging
 import time
+import re
+from typing import Dict
 
 # Disables log messages when using matplotlib
 logging.getLogger("matplotlib.font_manager").disabled = True
@@ -87,10 +89,12 @@ def check_parameters_and_extract_layers(dict, key, layer=0):
             dict[key][layer]
         ]() 
 
-
-def setup_output_folder(params):
+def setup_output_folder(params, local=True, export_prefix=None):
     experiment_name = params["experiment_name"]
-    experiment_folder = os.path.join("data/output", experiment_name)
+    if local:
+        experiment_folder = os.path.join("data/output", experiment_name)
+    else:
+        experiment_folder = os.path.join(export_prefix, "data/output", experiment_name)
     if os.path.exists(experiment_folder):
         shutil.rmtree(experiment_folder)
     output_folder = Path(experiment_folder)

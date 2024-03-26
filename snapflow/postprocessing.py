@@ -39,8 +39,11 @@ def insert_h5_vector(vector, paraview_output_folder):
         ]
 
 
-def save_paraview_visualization(vector, output_folder, plot_name):
-    paraview_input_folder = Path(os.path.join("data/visualization"))
+def save_paraview_visualization(vector, output_folder, plot_name, local=True, export_prefix=None):
+    if not local: 
+        paraview_input_folder = Path(os.path.join(export_prefix, "data/visualization"))
+    else:
+        paraview_input_folder = Path(os.path.join("data/visualization"))
     if output_folder:
         paraview_output_folder = output_folder / Path("paraview_plots")
         if not os.path.exists(paraview_output_folder):
@@ -198,7 +201,7 @@ class PostProcessing():
 
         return l2_norm_error
 
-    def save_paraview_largest_errors(self, l2_norm_errors, ground_truth_df, prediction_df):
+    def save_paraview_largest_errors(self, l2_norm_errors, ground_truth_df, prediction_df, local=True, export_prefix=None):
         logger.info(
                     "-----  Creating Paraview visualization for largest errors -------"
                 )
@@ -216,14 +219,18 @@ class PostProcessing():
                     ground_truth_largest_error,
                     self.output_folder,
                     f"ground_truth_largest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_largest_error}",
+                    local, 
+                    export_prefix
                 )
         
         save_paraview_visualization(
                     np.real(prediction_largest_error),
                     self.output_folder,
-                    f"prediction_largest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_largest_error}")
+                    f"prediction_largest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_largest_error}",
+                    local, 
+                    export_prefix)
 
-    def save_paraview_smallest_errors(self, l2_norm_error_dict, ground_truth_df, prediction_df):
+    def save_paraview_smallest_errors(self, l2_norm_error_dict, ground_truth_df, prediction_df, local=True, export_prefix=None):
         logger.info(
             "-----  Creating Paraview visualization for smallest errors -------"
         )
@@ -236,12 +243,16 @@ class PostProcessing():
         save_paraview_visualization(
                     ground_truth_smallest_error,
                     self.output_folder,
-                    f"ground_truth_smallest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_smallest_error}")
+                    f"ground_truth_smallest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_smallest_error}",
+                    local, 
+                    export_prefix)
         
         save_paraview_visualization(
                     np.real(prediction_smallest_error),
                     self.output_folder,
-                    f"prediction_smallest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_smallest_error}")
+                    f"prediction_smallest_error_{self.modeling_type}_{self.analysis_type}_fold_{self.fold}_{key_smallest_error}", 
+                    local, 
+                    export_prefix)
 
     def compute_frobenius_norm_error(self):
         output_dict = {}
@@ -296,7 +307,9 @@ class PostProcessing():
 
     @timing_decorator
     def compute_errors(
-        self
+        self, 
+        local=True,
+        export_prefix=None
     ):
         logger.info(
             "-------------------- Computing Errors and Metrics --------------------"
@@ -322,11 +335,11 @@ class PostProcessing():
             # Generate paraview visualization for lowest and largest errors
             if self.postproc_params_dict.get("l2_error_in_sequence").get("paraview_largest_error"):        
                 for key in l2_norm_errors:
-                    self.save_paraview_largest_errors(l2_norm_errors[key], ground_truth_df, prediction_df)
+                    self.save_paraview_largest_errors(l2_norm_errors[key], ground_truth_df, prediction_df, local, export_prefix)
                 
             if self.postproc_params_dict.get("l2_error_in_sequence").get("paraview_smallest_error"):        
                 for key in l2_norm_errors:
-                    self.save_paraview_smallest_errors(l2_norm_errors[key], ground_truth_df, prediction_df)
+                    self.save_paraview_smallest_errors(l2_norm_errors[key], ground_truth_df, prediction_df, local, export_prefix)
             
 
         # Move logging file to output folder

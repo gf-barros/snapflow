@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "snapflow"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydmd = {git = "https://github.com/PyDMD/PyDMD"}
+h5py = "3.10.0"
+natsort = "8.4.0"
+tqdm = "4.66.1"
+numpy = "1.26.3"
+ipykernel = "6.29.0"
+pyyaml = "6.0.1"
+scikit-learn = "1.4.0"
+torch = "2.1.2"
+torchaudio = "2.1.2"
+torchvision = "0.16.2"
+matplotlib = "3.8.2"
+pandas = "2.2.0"
+jupytext = "^1.16.3"
+black = "^24.4.2"
+pylint = "^3.2.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

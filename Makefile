@@ -1,12 +1,13 @@
-.PHONY: clean data lint requirements
+.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3
 
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJECT_NAME = turbiditos_surrogate
-PROJECT_NAME_VSCODE = turbiditos_surrogate_vscode
+BUCKET = .
+PROFILE = .
+PROJECT_NAME = snapflow
 PYTHON_INTERPRETER = python3
 PYTHON_VERSION = 3.10.13
 
@@ -20,14 +21,6 @@ endif
 # COMMANDS                                                                      #
 #################################################################################
 
-## Install Python Dependencies
-requirements: 
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
-
-## Make Dataset
-data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
-
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
@@ -35,11 +28,9 @@ clean:
 
 ## Lint using flake8
 lint:
-	flake8 src
+	black src/*.py
+	pylint src/*.py
 
-## Set as VS Code kernel
-vscode_install:
-	python3 -m ipykernel install --user --name $(PROJECT_NAME) --display-name $(PROJECT_NAME_VSCODE)
 
 ## Set up python interpreter environment
 create_environment:
@@ -59,14 +50,21 @@ else
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 endif
 
+requirements: 
+	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
 
-delete_environment:
-ifeq (True,$(HAS_CONDA))
-		@echo ">>> Detected conda, deleting conda environment."
-ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-		conda remove --name $(PROJECT_NAME) --all
-endif
-		@echo ">>> Conda env $(PROJECT_NAME) deleted."
-endif
+poetry:
+	@pip install poetry 2>/dev/null
+	@if [ ! -f pyproject.toml ]; then \
+		echo "pyproject.toml not found. Running 'poetry init'."; \
+		poetry init; \
+	else \
+		echo "pyproject.toml already exists."; \
+	fi
+	@poetry add $(shell cat requirements.txt | grep -v '^#' | xargs)
+	@poetry install
 
+
+install_source:
+	@poetry add src/
 

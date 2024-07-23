@@ -1,0 +1,37 @@
+origin_experiment_name: yaml #["input", "yaml"]
+experiment_name: "test_dmd"
+random_state: 42
+local: False
+snapshots:
+  file_type_str: 'h5_fenics' #h5_libmesh
+  folder: ''
+  file_name_contains: ['concentration']
+  dataset: null
+splitting:
+  strategy: null #["temporal", "kfold", "train_test", train_val]
+normalization:
+  snapshots: null
+  svd: null
+  auto_encoder: "min_max"
+  surrogate: "min_max"
+svd:
+  trunc_basis: 270
+  normalization: "min_max"
+  svd_type: "randomized_svd"  # ["full_svd", "randomized_svd"]
+  power_iterations: 1
+  oversampling: 20
+dmd:
+  dmd_start: 0
+  dmd_end: 2999
+  dt: 0.01
+postprocessing:
+  l2_error_in_sequence: 
+    active: True
+    clip: null
+    line_plot_error: True
+    bar_plot_error: False
+    paraview_largest_error: True
+    paraview_smallest_error: True
+  paraview_specific_plot: null
+  frobenius_error: True
+  copy_log: True
